@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/docs/" />
+  <Folder Name="/docs/adr/">
+    <File Path="0001-monolith-decomposition.md" />
+    <File Path="0002-routing-gateway.md" />
+  </Folder>
+  <Folder Name="/docs/diagrams/">
+    <File Path="01-composition-diagram.md" />
+    <File Path="02-sequence-current.md" />
+    <File Path="03-sequence-future.md" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/ApiGateway/ApiGateway.csproj" />
+    <Project Path="src/AuthService/AuthService.csproj" />
+    <Project Path="src/CatalogService/CatalogService.csproj" />
+  </Folder>
+  <Folder Name="/src/Monolith/">
+    <Project Path="src/Monolith/NovaGames.API/NovaGames.API.csproj" />
+    <Project Path="src/Monolith/NovaGames.Core/NovaGames.Core.csproj" />
+    <Project Path="src/Monolith/NovaGames.UI/NovaGames.UI.csproj" />
+  </Folder>
+</Solution>

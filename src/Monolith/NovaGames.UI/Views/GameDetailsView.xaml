@@ -1,0 +1,481 @@
+﻿<UserControl x:Class="NovaGames.UI.Views.GameDetailsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="clr-namespace:MdXaml;assembly=MdXaml"
+             xmlns:conv="clr-namespace:NovaGames.UI.Converters"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <Style x:Key="ModernGrayButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="20" BorderThickness="0" Background="#333333">
+                            <Border.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#444444"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#222222"/>
+                                <Setter TargetName="border" Property="Effect" Value="{x:Null}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style x:Key="CircleArrowButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="50"/>
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="FontSize" Value="30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="10,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="circle" Background="#88000000" CornerRadius="25">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-9,0,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="circle" Property="Background" Value="#AA00ADEF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <conv:AvatarConverter x:Key="AvatarConverter"/>
+        <conv:HexToBrushConverter x:Key="HexToBrushConverter"/>
+        <conv:FirstLetterConverter x:Key="FirstLetterConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style x:Key="StarRadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#444444"/>
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid x:Name="MainGrid" Background="#121212" ClipToBounds="True">
+
+        <Border HorizontalAlignment="Center" VerticalAlignment="Stretch" Width="1200" 
+                Background="#1A1A1A" BorderBrush="#00ADEF" BorderThickness="2,0,2,0">
+            <Border.Effect>
+                <DropShadowEffect Color="#00ADEF" BlurRadius="40" ShadowDepth="0" Opacity="0.3"/>
+            </Border.Effect>
+
+            <Grid>
+                <Rectangle Height="12" VerticalAlignment="Top" Panel.ZIndex="100" Margin="-2,0,-2,0">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                            <GradientStop Color="#AA000000" Offset="0"/>
+                            <GradientStop Color="#44000000" Offset="0.4"/>
+                            <GradientStop Color="#00000000" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="50,40">
+                    <StackPanel>
+
+                        <TextBlock Text="{Binding Title}" Foreground="White" FontSize="42" FontWeight="Bold" Margin="0,0,0,30" TextWrapping="Wrap"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="380"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,0,40,0">
+
+                                <Border Background="#252525" CornerRadius="10" Margin="0,0,0,15" BorderBrush="#333333" BorderThickness="1" ClipToBounds="True">
+                                    <Grid>
+                                        <Image x:Name="imgMainScreenshot" Stretch="UniformToFill" Height="400"/>
+
+                                        <Button x:Name="btnPrev" Content="‹" HorizontalAlignment="Left" Style="{StaticResource CircleArrowButtonStyle}" Click="BtnPrev_Click"/>
+                                        <Button x:Name="btnNext" Content="›" HorizontalAlignment="Right" Style="{StaticResource CircleArrowButtonStyle}" Click="BtnNext_Click"/>
+                                    </Grid>
+                                </Border>
+
+                                <ListBox x:Name="listScreenshots" Background="Transparent" BorderThickness="0" Margin="0,0,0,30"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                         SelectionChanged="ListScreenshots_SelectionChanged">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="thumbBorder" Width="160" Height="90" CornerRadius="5" Margin="0,0,10,10" 
+                                                                Cursor="Hand" BorderBrush="#333333" BorderThickness="1" ClipToBounds="True">
+                                                            <Image Source="{Binding}" Stretch="UniformToFill" Opacity="0.6"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="thumbBorder" Property="BorderBrush" Value="#00ADEF"/>
+                                                                <Setter TargetName="thumbBorder" Property="BorderThickness" Value="2"/>
+                                                                <Setter TargetName="thumbBorder" Property="Opacity" Value="1"/>
+                                                                <Setter TargetName="thumbBorder" Property="Effect">
+                                                                    <Setter.Value>
+                                                                        <DropShadowEffect Color="#00ADEF" BlurRadius="10" ShadowDepth="0" Opacity="0.5"/>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </Trigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="thumbBorder" Property="Opacity" Value="1"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                </ListBox>
+
+                                <Border Background="#252525" CornerRadius="10" BorderBrush="#333333" BorderThickness="1" Padding="25">
+                                    <StackPanel>
+                                        <TextBlock Text="ОПИС" Foreground="#00ADEF" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                                        <md:MarkdownScrollViewer Markdown="{Binding Description}" 
+                                 Foreground="#DDDDDD" 
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Disabled">
+                                            <md:MarkdownScrollViewer.Resources>
+                                                <Style TargetType="Paragraph">
+                                                    <Setter Property="FontFamily" Value="Segoe UI"/>
+                                                    <Setter Property="FontSize" Value="16"/>
+                                                    <Setter Property="LineHeight" Value="24"/>
+                                                    <Setter Property="Margin" Value="0,0,0,12"/>
+                                                </Style>
+                                            </md:MarkdownScrollViewer.Resources>
+                                        </md:MarkdownScrollViewer>
+
+                                    </StackPanel>
+                                </Border>
+
+                            </StackPanel>
+
+
+                            <StackPanel Grid.Column="1">
+
+                                <Border Height="178" Margin="0,0,0,20" CornerRadius="10" BorderBrush="#333333" BorderThickness="1">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="Black" BlurRadius="12" ShadowDepth="4" Opacity="0.4"/>
+                                    </Border.Effect>
+
+                                    <Border CornerRadius="9" ClipToBounds="True">
+                                        <Border.Background>
+                                            <ImageBrush ImageSource="{Binding ImagePath}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                        </Border.Background>
+                                    </Border>
+                                </Border>
+
+                                <Border Background="#252525" CornerRadius="10" BorderBrush="#333333" BorderThickness="1" Padding="25" Margin="0,0,0,20">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="Black" BlurRadius="12" ShadowDepth="4" Opacity="0.4"/>
+                                    </Border.Effect>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding DisplayGenres}" Foreground="#00ADEF" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,20" TextWrapping="Wrap"/>
+
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,20">
+                                            <TextBlock Text="{Binding Price, StringFormat={}{0:N2} ₴}" 
+                                                       TextDecorations="Strikethrough" 
+                                                       Foreground="#888888" 
+                                                       FontSize="18" 
+                                                       VerticalAlignment="Bottom" 
+                                                       Margin="0,0,15,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasDiscount}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+
+                                            <TextBlock Text="{Binding FinalPrice, StringFormat={}{0:N2} ₴}" FontSize="32" FontWeight="Bold" Foreground="#00ADEF" VerticalAlignment="Bottom"/>
+                                        </StackPanel>
+
+                                        <Grid Height="45" Margin="0,0,0,0">
+                                            <Button x:Name="btnAddToCart" Content="ДОДАТИ В КОШИК" Click="BtnAddToCart_Click" Tag="{Binding}" FontSize="16">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsInCart}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsOwned}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+
+                                            <Button Content="В КОШИКУ" Click="BtnGoToCart_Click" Tag="{Binding}" FontSize="16">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource ModernGrayButtonStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsInCart}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsOwned}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+
+                                            <Button Content="В БІБЛІОТЕКУ" Click="BtnGoToLibrary_Click" Tag="{Binding}" FontSize="16">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource ModernGrayButtonStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsOwned}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="#252525" CornerRadius="10" BorderBrush="#333333" BorderThickness="1" Padding="25">
+                                    <StackPanel>
+                                        <TextBlock x:Name="txtDetailsTitle" Text="ДЕТАЛІ" Foreground="#AAAAAA" FontSize="14" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                                        <StackPanel x:Name="panelDigital" Visibility="Collapsed">
+                                            <TextBlock Text="Тип: Цифрова копія" Foreground="White" FontSize="14" Margin="0,0,0,5"/>
+
+                                            <Border x:Name="borderRequirements" Background="#1A1A1A" CornerRadius="8" Padding="12" BorderBrush="#333333" BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="15"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="МІНІМАЛЬНІ" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                                        <TextBlock Text="ОС:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblMinOS" Text="-" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                                                        <TextBlock Text="Процесор:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblMinProcessor" Text="-" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                                                        <TextBlock Text="Пам'ять:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblMinMemory" Text="-" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                                                        <TextBlock Text="Відеокарта:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblMinGraphics" Text="-" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                                                        <TextBlock Text="Місце на диску:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblMinStorage" Text="-" Foreground="#CCCCCC" FontSize="11" TextWrapping="Wrap"/>
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="2">
+                                                        <TextBlock Text="РЕКОМЕНДОВАНІ" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                                        <TextBlock Text="ОС:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblRecOS" Text="-" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                                                        <TextBlock Text="Процесор:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblRecProcessor" Text="-" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                                                        <TextBlock Text="Пам'ять:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblRecMemory" Text="-" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                                                        <TextBlock Text="Відеокарта:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblRecGraphics" Text="-" Foreground="#CCCCCC" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+
+                                                        <TextBlock Text="Місце на диску:" Foreground="#666666" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="lblRecStorage" Text="-" Foreground="#CCCCCC" FontSize="11" TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <StackPanel x:Name="panelPhysical" Visibility="Collapsed">
+                                            <TextBlock Text="Тип: Фізичне видання" Foreground="White" FontSize="14" Margin="0,0,0,5"/>
+                                            <TextBlock x:Name="txtWeight" Text="Вага: 0 кг" Foreground="#888888" FontSize="14" Margin="0,0,0,5"/>
+                                            <TextBlock x:Name="txtStock" Text="В наявності: 0 шт." Foreground="#00ADEF" FontSize="14" FontWeight="Bold"/>
+                                        </StackPanel>
+
+                                        <StackPanel x:Name="panelSubscription" Visibility="Collapsed">
+                                            <TextBlock Text="Тип: Підписка" Foreground="White" FontSize="14" Margin="0,0,0,5"/>
+                                            <TextBlock x:Name="txtDuration" Text="Тривалість: 1 міс." Foreground="#00ADEF" FontSize="14" Margin="0,0,0,5" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="txtAutoRenew" Text="Автоподовження: Так" Foreground="#888888" FontSize="14"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Margin="0,40,0,20">
+                            <Grid Margin="0,0,0,15">
+                                <TextBlock Text="ВІДГУКИ ГРАВЦІВ" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TotalReviews}" Value="0">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <TextBlock Text="★" Foreground="#FFB900" FontSize="20" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding AverageRating, StringFormat={}{0:0.0}}" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalReviews, StringFormat={} ({0} відгуків)}" Foreground="#888888" FontSize="14" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Border x:Name="WriteReviewPanel" Background="#1A1A1A" CornerRadius="8" Padding="20" BorderBrush="#333333" BorderThickness="1" Margin="0,0,0,25">
+                                <StackPanel>
+                                    <TextBlock Text="НАПИСАТИ ВІДГУК" Foreground="#00ADEF" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                        <TextBlock Text="Ваша оцінка:" Foreground="#AAAAAA" FontSize="14" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                                        <RadioButton x:Name="star1" Content="★" GroupName="Rating" Style="{StaticResource StarRadioButtonStyle}" Tag="1" Checked="Star_Checked" MouseEnter="Star_MouseEnter" MouseLeave="Star_MouseLeave"/>
+                                        <RadioButton x:Name="star2" Content="★" GroupName="Rating" Style="{StaticResource StarRadioButtonStyle}" Tag="2" Checked="Star_Checked" MouseEnter="Star_MouseEnter" MouseLeave="Star_MouseLeave"/>
+                                        <RadioButton x:Name="star3" Content="★" GroupName="Rating" Style="{StaticResource StarRadioButtonStyle}" Tag="3" Checked="Star_Checked" MouseEnter="Star_MouseEnter" MouseLeave="Star_MouseLeave"/>
+                                        <RadioButton x:Name="star4" Content="★" GroupName="Rating" Style="{StaticResource StarRadioButtonStyle}" Tag="4" Checked="Star_Checked" MouseEnter="Star_MouseEnter" MouseLeave="Star_MouseLeave"/>
+                                        <RadioButton x:Name="star5" Content="★" GroupName="Rating" Style="{StaticResource StarRadioButtonStyle}" Tag="5" Checked="Star_Checked" MouseEnter="Star_MouseEnter" MouseLeave="Star_MouseLeave"/>
+                                    </StackPanel>
+
+                                    <TextBox x:Name="txtReviewInput" MinHeight="80" AcceptsReturn="True" TextWrapping="Wrap" 
+                                                 VerticalContentAlignment="Top" Padding="12,12,10,12" 
+                                                 ToolTip="Розкажіть іншим гравцям про ваші враження від гри..."/>
+
+                                    <Button x:Name="btnSubmitReview" Content="ВІДПРАВИТИ" Width="150" Height="35" 
+                                                HorizontalAlignment="Right" Margin="0,15,0,0" 
+                                                Style="{StaticResource ModernButtonStyle}" Click="BtnSubmitReview_Click"/>
+                                </StackPanel>
+                            </Border>
+
+                            <ItemsControl x:Name="listReviews">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#1A1A1A" CornerRadius="8" Padding="15" Margin="0,0,0,10" BorderBrush="#252525" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Width="40" Height="40" CornerRadius="20" Background="#2A2A2A" 
+                                                            BorderBrush="{Binding AvatarBorderColorHex, Converter={StaticResource HexToBrushConverter}}" 
+                                                            BorderThickness="2" VerticalAlignment="Top">
+                                                    <Grid>
+                                                        <TextBlock Text="{Binding Username, Converter={StaticResource FirstLetterConverter}}" 
+                                                                       Foreground="White" FontSize="18" FontWeight="Bold" 
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
+                                                        <Image Source="{Binding AvatarUrl, Converter={StaticResource AvatarConverter}}" Stretch="UniformToFill">
+                                                            <Image.Clip>
+                                                                <EllipseGeometry RadiusX="18" RadiusY="18" Center="18,18"/>
+                                                            </Image.Clip>
+                                                        </Image>
+                                                    </Grid>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" Margin="15,0,0,0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <TextBlock Grid.Column="0" Text="{Binding Username}" Foreground="White" FontSize="14" FontWeight="Bold"/>
+
+                                                        <TextBlock Grid.Column="1" Text="(змінено)" Foreground="#888888" FontSize="11" VerticalAlignment="Bottom" Margin="5,0,0,1" 
+               Visibility="{Binding IsEdited, Converter={StaticResource BoolToVis}}"/>
+
+                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                            <Button Tag="{Binding}" Click="BtnEditReview_Click" 
+                Visibility="{Binding IsMine, Converter={StaticResource BoolToVis}}"
+                Cursor="Hand" Margin="0,0,10,0" Background="Transparent" BorderThickness="0">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <TextBlock x:Name="txtBtn" Text="✎ Редагувати" Foreground="#00ADEF" FontSize="12"/>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="txtBtn" Property="Foreground" Value="#55C8F5"/>
+                                                                                <Setter TargetName="txtBtn" Property="TextDecorations" Value="Underline"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
+                                                            <Button Tag="{Binding}" Click="BtnDeleteReview_Click" 
+                Visibility="{Binding IsMine, Converter={StaticResource BoolToVis}}"
+                Cursor="Hand" Margin="0,0,15,0" Background="Transparent" BorderThickness="0">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <TextBlock x:Name="txtBtnDel" Text="✖ Видалити" Foreground="#FF5555" FontSize="12"/>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="txtBtnDel" Property="Foreground" Value="#FF7777"/>
+                                                                                <Setter TargetName="txtBtnDel" Property="TextDecorations" Value="Underline"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
+
+                                                            <TextBlock Text="{Binding CreatedAt, StringFormat={}{0:dd.MM.yyyy}}" Foreground="#666666" FontSize="12" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding Rating, StringFormat={}Оцінка: {0} з 5}" Foreground="#FFB900" FontSize="12" FontWeight="Bold" Margin="0,5,0,10"/>
+                                                    <TextBlock Text="{Binding Text}" Foreground="#CCCCCC" FontSize="14" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

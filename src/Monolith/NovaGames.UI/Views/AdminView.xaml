@@ -1,0 +1,637 @@
+﻿<UserControl x:Class="NovaGames.UI.Views.AdminView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" d:DesignWidth="1100" Background="Transparent" d:DesignHeight="975">
+
+    <UserControl.Resources>
+        <Style x:Key="ModernRedButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="20" BorderThickness="0" Background="#FF5555">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#FF5555" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                                <Setter TargetName="border" Property="Effect" Value="{x:Null}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernGrayButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="20" BorderThickness="0" Background="#333333">
+                            <Border.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#444444"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#222222"/>
+                                <Setter TargetName="border" Property="Effect" Value="{x:Null}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="AdminGameItemTemplate">
+            <Grid Margin="15,10,15,15" Background="Transparent">
+                <Border Background="#252525" CornerRadius="10" BorderBrush="#333333" BorderThickness="1">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="3" Opacity="0.3"/>
+                    </Border.Effect>
+
+                    <Grid Margin="15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="230"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" CornerRadius="8" Background="#1A1A1A" Height="108" Width="230" VerticalAlignment="Top" Cursor="Hand">
+
+                            <Border CornerRadius="8">
+                                <Border.Background>
+                                    <ImageBrush ImageSource="{Binding ImagePath}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </Border.Background>
+                            </Border>
+
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Margin="20,0,10,0" VerticalAlignment="Top">
+                            <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding DisplayGenres}" FontSize="13" Foreground="#00ADEF" Margin="0,8,0,0" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding Price, StringFormat={}Базова ціна: {0:N2} ₴}" FontSize="14" Foreground="#AAAAAA" Margin="0,8,0,0"/>
+
+                            <TextBlock Text="{Binding Discount, StringFormat={}Знижка: {0:0}%}" FontSize="14" Foreground="#FF5555" Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal">
+
+                            <Button Content="РЕДАГУВАТИ" Click="BtnEdit_Click" Tag="{Binding}" 
+                                    Style="{StaticResource ModernButtonStyle}" 
+                                    Width="110" Height="34" Margin="0,0,10,0"/>
+
+                            <Button Content="ВИДАЛИТИ" Click="BtnDelete_Click" Tag="{Binding}" 
+                                    Style="{StaticResource ModernRedButtonStyle}" 
+                                    Width="100" Height="34"/>
+
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <Style x:Key="AdminTabStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,20,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,10,10,15"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="#00ADEF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="AdminUserItemTemplate">
+            <Grid Margin="15,10,15,15" Background="Transparent">
+
+                <Border x:Name="UserBorder" Background="#252525" CornerRadius="10" 
+                        BorderBrush="#333333" BorderThickness="1" Cursor="Hand" 
+                        RenderTransformOrigin="0.5,0.5">
+
+                    <Border.RenderTransform>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                    </Border.RenderTransform>
+
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="12" ShadowDepth="4" Opacity="0.4"/>
+                    </Border.Effect>
+
+                    <Grid Margin="15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border x:Name="AvatarBorder" Grid.Column="0" Width="50" Height="50" CornerRadius="25" Background="#1A1A1A" BorderBrush="#555555" BorderThickness="2">
+                            <TextBlock Text="👤" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" Foreground="#AAAAAA"/>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Margin="20,0,10,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Username}" FontSize="20" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="txtRole" Text="{Binding Role}" FontSize="13" FontWeight="SemiBold" Foreground="#AAAAAA" Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <TextBlock Text="{Binding WalletBalance, StringFormat={}Баланс: {0:N2} ₴}" FontSize="16" Foreground="#00ADEF" FontWeight="Bold" HorizontalAlignment="Right"/>
+                            <TextBlock Text="{Binding LastLoginDate, StringFormat={}Вхід: {0:dd.MM.yyyy}}" FontSize="12" Foreground="#666666" Margin="0,4,0,0" HorizontalAlignment="Right"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <EventTrigger RoutedEvent="UIElement.MouseEnter">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.01" Duration="0:0:0.2"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.01" Duration="0:0:0.2"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="25" Duration="0:0:0.2"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.7" Duration="0:0:0.2"/>
+                                            <ColorAnimation Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="#00ADEF" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                                <EventTrigger RoutedEvent="UIElement.MouseLeave">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.2"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.2"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)" To="12" Duration="0:0:0.2"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.4" Duration="0:0:0.2"/>
+                                            <ColorAnimation Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="#333333" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                </Border>
+            </Grid>
+
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Role}" Value="SuperAdmin">
+                    <Setter TargetName="AvatarBorder" Property="BorderBrush" Value="#FFB900"/>
+                    <Setter TargetName="txtRole" Property="Foreground" Value="#FFB900"/>
+                    <Setter TargetName="txtRole" Property="Text" Value="🌟 SUPER ADMIN"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Role}" Value="Admin">
+                    <Setter TargetName="AvatarBorder" Property="BorderBrush" Value="#FF5555"/>
+                    <Setter TargetName="txtRole" Property="Foreground" Value="#FF5555"/>
+                    <Setter TargetName="txtRole" Property="Text" Value="🛡️ ADMIN"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Role}" Value="Moderator">
+                    <Setter TargetName="AvatarBorder" Property="BorderBrush" Value="#00D26A"/>
+                    <Setter TargetName="txtRole" Property="Foreground" Value="#00D26A"/>
+                    <Setter TargetName="txtRole" Property="Text" Value="🛠️ MODERATOR"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Background="#121212">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="45"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#1A1A1A" BorderBrush="#333333" BorderThickness="0,0,0,1">
+            <Grid x:Name="AdminNavGrid" Margin="30,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Left">
+
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="rbTabGames" Content="КАТАЛОГ ІГОР" Style="{StaticResource AdminTabStyle}" IsChecked="True" Checked="Tab_Checked"/>
+                    <RadioButton x:Name="rbTabUsers" Content="КОРИСТУВАЧІ" Style="{StaticResource AdminTabStyle}" Checked="Tab_Checked"/>
+                </StackPanel>
+
+                <Border x:Name="AdminSlidingIndicator" Height="3" Background="#00ADEF" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="0">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#00ADEF" BlurRadius="10" ShadowDepth="0" Opacity="0.8"/>
+                    </Border.Effect>
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="AdminIndicatorTransform" X="0"/>
+                    </Border.RenderTransform>
+                </Border>
+
+            </Grid>
+        </Border>
+
+        <Grid x:Name="GamesContainer" Grid.Row="1" Visibility="Visible">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="450"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="#1A1A1A" BorderBrush="#333333" BorderThickness="0,0,1,0" CornerRadius="0,0,0,10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="25">
+                    <StackPanel>
+                        <TextBlock x:Name="txtFormTitle" Text="ДОДАТИ НОВУ ГРУ" Foreground="#00ADEF" FontWeight="Bold" FontSize="18" Margin="0,0,0,25" HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="НАЗВА ГРИ *" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                        <TextBox x:Name="txtTitle" Height="40" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="БАЗОВА ЦІНА (₴) *" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                        <TextBox x:Name="txtPrice" Height="40" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="ЗНИЖКА (%)" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                        <TextBox x:Name="txtDiscount" Text="0" Height="40" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="ЖАНРИ (ЧЕРЕЗ КОМУ)" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                        <TextBox x:Name="txtGenres" Height="40" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="ТИП ГРИ *" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                        <ComboBox x:Name="comboGameType" Height="40" Margin="0,0,0,15" Style="{StaticResource ModernComboBoxStyle}" ItemContainerStyle="{StaticResource DarkComboBoxItemStyle}">
+                            <ComboBoxItem Content="Цифрова (Ключ/Завантаження)" Tag="Digital" IsSelected="True"/>
+                            <ComboBoxItem Content="Фізична (Диск/Коробка)" Tag="Physical"/>
+                            <ComboBoxItem Content="Підписка (Сервіс)" Tag="Subscription"/>
+                        </ComboBox>
+
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ElementName=comboGameType, Path=SelectedItem.Tag}" Value="Digital">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+
+                            <TextBlock Text="РОЗМІР ЗАВАНТАЖЕННЯ (GB) *" Foreground="#00ADEF" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                            <TextBox x:Name="txtDownloadSize" Height="40" Margin="0,0,0,15"/>
+
+                            <TextBlock Text="АРХІВ ГРИ (.ZIP) *" Foreground="#00ADEF" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                            <Grid Margin="0,0,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox x:Name="txtGameZipUrl" Grid.Column="0" Height="40" IsReadOnly="True" Margin="0,0,105,0"/>
+
+                                <Button Content="ОГЛЯД..." Height="40" Style="{StaticResource ModernGrayButtonStyle}" Click="BtnBrowseZip_Click" Margin="310,0,10,0"/>
+                            </Grid>
+
+                            <TextBlock Text="СИСТЕМНІ ВИМОГИ" Foreground="#00ADEF" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                            <Border Background="#252525" CornerRadius="8" BorderBrush="#333333" BorderThickness="1" Padding="15" Margin="0,0,0,20">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="МІНІМАЛЬНІ" Foreground="#00ADEF" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                                        <TextBlock Text="ОС" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtMinOS" Height="30" Margin="0,0,0,10" Style="{StaticResource ModernInputStyle}"/>
+
+                                        <TextBlock Text="ПРОЦЕСОР" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtMinProcessor" Height="30" Margin="0,0,0,10" Style="{StaticResource ModernInputStyle}"/>
+
+                                        <TextBlock Text="ОПЕРАТИВНА ПАМ'ЯТЬ" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtMinMemory" Height="30" Margin="0,0,0,10" Style="{StaticResource ModernInputStyle}" ToolTip="Наприклад: 8 GB RAM"/>
+
+                                        <TextBlock Text="ВІДЕОКАРТА" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtMinGraphics" Height="30" Margin="0,0,0,10" Style="{StaticResource ModernInputStyle}"/>
+
+                                        <TextBlock Text="МІСЦЕ НА ДИСКУ" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtMinStorage" Height="30" Margin="0,0,0,5" Style="{StaticResource ModernInputStyle}" ToolTip="Наприклад: 50 GB"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="РЕКОМЕНДОВАНІ" Foreground="#00ADEF" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                                        <TextBlock Text="ОС" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtRecOS" Height="30" Margin="0,0,0,10" Style="{StaticResource ModernInputStyle}"/>
+
+                                        <TextBlock Text="ПРОЦЕСОР" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtRecProcessor" Height="30" Margin="0,0,0,10" Style="{StaticResource ModernInputStyle}"/>
+
+                                        <TextBlock Text="ОПЕРАТИВНА ПАМ'ЯТЬ" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtRecMemory" Height="30" Margin="0,0,0,10" Style="{StaticResource ModernInputStyle}"/>
+
+                                        <TextBlock Text="ВІДЕОКАРТА" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtRecGraphics" Height="30" Margin="0,0,0,10" Style="{StaticResource ModernInputStyle}"/>
+
+                                        <TextBlock Text="МІСЦЕ НА ДИСКУ" Foreground="#888888" FontSize="10" FontWeight="Bold" Margin="5,0,0,2"/>
+                                        <TextBox x:Name="txtRecStorage" Height="30" Margin="0,0,0,5" Style="{StaticResource ModernInputStyle}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ElementName=comboGameType, Path=SelectedItem.Tag}" Value="Physical">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+
+                            <TextBlock Text="ВАГА ДЛЯ ДОСТАВКИ (КГ)" Foreground="#FFB900" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                            <TextBox x:Name="txtShippingWeight" Height="40" Margin="0,0,0,15"/>
+
+                            <TextBlock Text="КІЛЬКІСТЬ НА СКЛАДІ (ШТ)" Foreground="#FFB900" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                            <TextBox x:Name="txtStockQuantity" Height="40" Margin="0,0,0,15"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ElementName=comboGameType, Path=SelectedItem.Tag}" Value="Subscription">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+
+                            <TextBlock Text="ТРИВАЛІСТЬ (МІСЯЦІВ) *" Foreground="#00D26A" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                            <TextBox x:Name="txtDurationMonths" Height="40" Margin="0,0,0,15"/>
+
+                            <CheckBox x:Name="chkAutoRenew" Content="АВТОМАТИЧНЕ ПОДОВЖЕННЯ" 
+                                  Style="{StaticResource NovaCheckBoxStyle}"
+                                  Foreground="White" FontWeight="Bold" FontSize="12" Margin="5,0,0,15"/>
+                        </StackPanel>
+
+                        <TextBlock Text="ОПИС (MARKDOWN) *" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                        <TextBox x:Name="txtDescription" Height="150" AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,15" VerticalContentAlignment="Top" Padding="12,12,10,12"/>
+
+                        <TextBlock Text="ОБКЛАДИНКА (ЛОКАЛЬНИЙ ФАЙЛ) *" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="90"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="txtCoverPath" Height="40" IsReadOnly="True" Margin="0,0,15,0" ToolTip="Шлях до файлу на вашому ПК"/>
+                            <Button Grid.Column="1" Content="ОГЛЯД..." Height="40" Style="{StaticResource ModernGrayButtonStyle}" Click="BtnBrowseCover_Click" Margin="0,0,10,0"/>
+                        </Grid>
+
+                        <Border x:Name="borderCoverPreview" Height="180" Background="#1A1A1A" CornerRadius="8" Margin="0,0,0,15" Visibility="Collapsed" BorderBrush="#333333" BorderThickness="1" ClipToBounds="True">
+                            <Image x:Name="imgCoverPreview" Stretch="UniformToFill"/>
+                        </Border>
+
+                        <TextBlock Text="ІКОНКА (ЛОКАЛЬНИЙ ФАЙЛ) *" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="90"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="txtIconPath" Height="40" IsReadOnly="True" Margin="0,0,15,0" ToolTip="Шлях до файлу іконки на вашому ПК"/>
+                            <Button Grid.Column="1" Content="ОГЛЯД..." Height="40" Style="{StaticResource ModernGrayButtonStyle}" Click="BtnBrowseIcon_Click" Margin="0,0,10,0"/>
+                        </Grid>
+
+                        <Border x:Name="borderIconPreview" Width="100" Height="100" HorizontalAlignment="Left" Background="#1A1A1A" CornerRadius="8" Margin="0,0,0,15" Visibility="Collapsed" BorderBrush="#333333" BorderThickness="1" ClipToBounds="True">
+                            <Image x:Name="imgIconPreview" Stretch="UniformToFill"/>
+                        </Border>
+
+                        <TextBlock Text="СКРІНШОТИ (МАКС 15)" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="90"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="txtScreenshotsPath" Height="40" IsReadOnly="True" Margin="0,0,15,0" ToolTip="Вибрані файли"/>
+                            <Button Grid.Column="1" Content="ВИБРАТИ" Height="40" Style="{StaticResource ModernGrayButtonStyle}" Click="BtnBrowseScreenshots_Click" Margin="0,0,10,0"/>
+                        </Grid>
+
+                        <TextBlock x:Name="txtSelectedScreenshotsCount" Text="Вибрано: 0" Foreground="#00ADEF" FontSize="12" FontWeight="SemiBold" Margin="5,-10,0,15"/>
+
+                        <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,15" PreviewMouseWheel="ScreenshotsScroll_PreviewMouseWheel">
+                            <ItemsControl x:Name="listScreenshotsPreview">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Width="140" Height="80" Margin="0,0,10,0" CornerRadius="5" BorderThickness="1" BorderBrush="#333333" ClipToBounds="True">
+                                            <Image Source="{Binding}" Stretch="UniformToFill"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <CheckBox x:Name="chkIsPublished" Content="ОПУБЛІКОВАНА (ВИДИМА В МАГАЗИНІ)" 
+                                  Style="{StaticResource NovaCheckBoxStyle}"
+                                  Foreground="White" FontWeight="Bold" FontSize="12" Margin="5,0,0,15" IsChecked="True"/>
+
+                        <Button x:Name="btnSubmitGame" Content="ДОДАТИ ГРУ" Height="45" Style="{StaticResource ModernButtonStyle}" Click="BtnSubmitGame_Click" Margin="0,15,0,10"/>
+
+                        <Button x:Name="btnCancelEdit" Content="СКАСУВАТИ РЕДАГУВАННЯ" 
+                            Height="40" Style="{StaticResource ModernGrayButtonStyle}" 
+                            Click="BtnCancelEdit_Click" Visibility="Collapsed"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Grid Grid.Column="1" Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="300"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="Управління каталогом" Foreground="White" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+
+                    <Grid Grid.Column="2">
+                        <TextBox x:Name="txtSearchGames" 
+                                 Height="35" Style="{StaticResource ModernInputStyle}"
+                                 TextChanged="TxtSearchGames_TextChanged"
+                                 Padding="35,0,10,0"
+                                 ToolTip="Введіть назву гри для пошуку..."/>
+
+                        <TextBlock Text="🔍" Foreground="#888888" FontSize="14" 
+                                   VerticalAlignment="Center" HorizontalAlignment="Left" Margin="12,0,0,0"
+                                   IsHitTestVisible="False"/>
+
+                        <TextBlock Text="Пошук гри..." Foreground="#555555" FontSize="14" 
+                                   VerticalAlignment="Center" HorizontalAlignment="Left" Margin="35,0,0,0"
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ElementName=txtSearchGames, Path=Text}" Value="">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+
+                <ListBox x:Name="listAdminGames" Grid.Row="1" Background="Transparent" BorderThickness="0" 
+                         ScrollViewer.CanContentScroll="False" ItemTemplate="{StaticResource AdminGameItemTemplate}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </Grid>
+        </Grid>
+        <Grid x:Name="UsersContainer" Grid.Row="1" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="350"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="#1A1A1A" BorderBrush="#333333" BorderThickness="0,0,1,0" CornerRadius="0,0,0,10">
+                <Grid Margin="16">
+                    <TextBlock x:Name="txtNoUserSelected" Text="ОБЕРІТЬ КОРИСТУВАЧА ЗІ СПИСКУ" Foreground="#666666" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+
+                    <StackPanel x:Name="panelUserActions" Visibility="Collapsed">
+                        <TextBlock Text="КЕРУВАННЯ АКАУНТОМ" Foreground="#00ADEF" FontWeight="Bold" FontSize="18" Margin="0,0,0,25" HorizontalAlignment="Center"/>
+
+                        <TextBlock x:Name="txtSelectedUsername" Text="Username" Foreground="White" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="txtSelectedUserRole" Text="Role" Foreground="#AAAAAA" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,5,0,30"/>
+
+                        <Button x:Name="btnMakeAdmin" Content="ДАТИ ПРАВА АДМІНА" Height="45" Style="{StaticResource ModernButtonStyle}" Click="BtnUserAction_Click" Margin="0,0,0,15"/>
+                        <Button x:Name="btnMakeModerator" Content="ДАТИ ПРАВА МОДЕРАТОРА" Height="45" Style="{StaticResource ModernButtonStyle}" Click="BtnUserAction_Click" Margin="0,0,0,15"/>
+                        <Button x:Name="btnRemovePrivileges" Content="ЗАБРАТИ ПРАВА (В КЛІЄНТИ)" Height="45" Style="{StaticResource ModernGrayButtonStyle}" Click="BtnUserAction_Click" Margin="0,0,0,15"/>
+
+                        <Separator Background="#333333" Margin="0,15,0,30"/>
+                        <Button x:Name="btnBlockUser" Content="ЗАБЛОКУВАТИ АКАУНТ" Height="45" Style="{StaticResource ModernRedButtonStyle}" Click="BtnUserAction_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="1" Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="300"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="Управління користувачами" Foreground="White" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+
+                    <!-- ПОЛЕ ПОШУКУ КОРИСТУВАЧІВ З ПЛЕЙСХОЛДЕРОМ ТА ІКОНКОЮ -->
+                    <Grid Grid.Column="2">
+                        <TextBox x:Name="txtSearchUsers" 
+                                 Height="35" Style="{StaticResource ModernInputStyle}"
+                                 TextChanged="TxtSearchUsers_TextChanged"
+                                 Padding="35,0,10,0"
+                                 ToolTip="Введіть ім'я користувача для пошуку..."/>
+
+                        <!-- Іконка лупи -->
+                        <TextBlock Text="🔍" Foreground="#888888" FontSize="14" 
+                                   VerticalAlignment="Center" HorizontalAlignment="Left" Margin="12,0,0,0"
+                                   IsHitTestVisible="False"/>
+
+                        <!-- Текст-підказка -->
+                        <TextBlock Text="Пошук користувача..." Foreground="#555555" FontSize="14" 
+                                   VerticalAlignment="Center" HorizontalAlignment="Left" Margin="35,0,0,0"
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ElementName=txtSearchUsers, Path=Text}" Value="">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+
+                <ListBox x:Name="listAdminUsers" Grid.Row="1" Background="Transparent" BorderThickness="0" 
+                         SelectionChanged="ListAdminUsers_SelectionChanged"
+                         ScrollViewer.CanContentScroll="False" ItemTemplate="{StaticResource AdminUserItemTemplate}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="BgBorder" Background="Transparent" CornerRadius="10">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="BgBorder" Property="Background" Value="#1AFFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+
+                </ListBox>
+            </Grid>
+        </Grid>
+
+    </Grid>
+</UserControl>

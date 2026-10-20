@@ -1,0 +1,127 @@
+﻿<Window x:Class="NovaGames.UI.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Nova Games - Login" Height="530" Width="380"
+        Icon="/Assets/LOGO.ico"  WindowStartupLocation="CenterScreen" ResizeMode="CanResize"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent">
+
+    <Window.Resources>
+        <Style x:Key="EyeButtonStyle" TargetType="{x:Type ToggleButton}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <Border Background="Transparent">
+                            <TextBlock Text="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#DDDDDD"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="#00ADEF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- ОСНОВНА РОЗМІТКА -->
+    <Border CornerRadius="20" Background="#181818" BorderBrush="#333333" BorderThickness="1" Margin="10">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="5" Opacity="0.5"/>
+        </Border.Effect>
+
+        <Grid Margin="30">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Хедер з логотипом -->
+            <Grid Grid.Row="0">
+                <StackPanel HorizontalAlignment="Center" Margin="0,10,0,20">
+                    <Ellipse Width="10" Height="10" Fill="#00ADEF" HorizontalAlignment="Center" Margin="0,0,0,10">
+                        <Ellipse.Effect>
+                            <DropShadowEffect Color="#00ADEF" BlurRadius="15" ShadowDepth="0"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+
+                    <TextBlock FontSize="28" FontWeight="ExtraBold" Foreground="White" HorizontalAlignment="Center">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#00ADEF" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                        </TextBlock.Effect>
+                        <Run Text="N O V A  "/>
+                        <Run Text="G A M E S" Foreground="#00ADEF"/>
+                    </TextBlock>
+
+                    <TextBlock Text="З ПОВЕРНЕННЯМ" 
+                               FontSize="12" FontWeight="SemiBold" Foreground="#666666" 
+                               HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                </StackPanel>
+
+                <Button Style="{StaticResource CloseButtonStyle}"
+                        Content="✕" 
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Click="BtnClose_Click"
+                        Margin="0,-15,-15,0"/>
+            </Grid>
+
+            <!-- Поля вводу -->
+            <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                <TextBlock Text="ІМ'Я КОРИСТУВАЧА" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,0,0,5"/>
+                <TextBox x:Name="txtUsername" Height="40" Padding="12,0,10,0" VerticalContentAlignment="Center"/>
+
+                <TextBlock Text="ПАРОЛЬ" Foreground="#AAAAAA" FontSize="11" FontWeight="Bold" Margin="5,20,0,5"/>
+                <Grid>
+                    <PasswordBox x:Name="txtPassword" Height="40" Padding="12,0,35,0" VerticalContentAlignment="Center"/>
+                    <TextBox x:Name="txtPasswordVisible" Height="40" Padding="12,0,35,0" VerticalContentAlignment="Center" Visibility="Collapsed"/>
+
+                    <ToggleButton x:Name="btnTogglePassword" Content="👁" 
+                                  Width="30" Height="30" HorizontalAlignment="Right" Margin="0,0,5,0" 
+                                  Style="{StaticResource EyeButtonStyle}"
+                                  Click="BtnTogglePassword_Click"/>
+                </Grid>
+
+                <TextBlock x:Name="lblCapsLock" 
+                           Text="Caps Lock увімкнено!" 
+                           Foreground="#FFB300" FontSize="11" FontWeight="Bold"
+                           HorizontalAlignment="Center" Margin="0,10,0,0" 
+                           Visibility="Hidden"/>
+
+                <TextBlock x:Name="lblError" 
+                           Height="35"
+                           Text="" 
+                           Foreground="#FF5555" FontSize="12"
+                           HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                           Margin="0,15,0,0" 
+                           Visibility="Hidden"/>
+
+            </StackPanel>
+
+            <!-- Кнопки дій -->
+            <StackPanel Grid.Row="2" Margin="0,0,0,0">
+                <CheckBox x:Name="chkRememberMe" Content="ЗАПАМ'ЯТАТИ МЕНЕ" 
+                          Style="{StaticResource NovaCheckBoxStyle}"
+                          HorizontalAlignment="Left" Margin="5,0,0,10"/>
+
+                <!-- Синя кнопка "Увійти" -->
+                <Button x:Name="btnLogin" Content="УВІЙТИ" 
+                        Height="45" Style="{StaticResource ModernButtonStyle}"
+                        Click="BtnLogin_Click" Margin="0,0,0,15"/>
+
+                <!-- Кнопка "Create Account" -->
+                <Button x:Name="btnRegister" Content="Створити обліковий запис" 
+                        Height="30" Style="{StaticResource TextOnlyButtonStyle}"
+                        Click="BtnRegister_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
