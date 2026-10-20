@@ -9,6 +9,8 @@ public sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransforme
     public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken ct)
     {
         document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+
         var scheme = new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.Http,
