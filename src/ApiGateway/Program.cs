@@ -11,15 +11,13 @@ var app = builder.Build();
 
 app.Use(async (context, next) =>
 {
-    // 1. Перехоплюємо /health власноруч до Ocelot
     if (context.Request.Path == "/health")
     {
         context.Response.StatusCode = 200;
         await context.Response.WriteAsync("Gateway is healthy!");
-        return; // Зупиняємо конвеєр тут, Ocelot цей запит не побачить
+        return;
     }
 
-    // 2. Логування та Correlation-Id для всіх інших запитів
     var stopwatch = Stopwatch.StartNew();
 
     if (!context.Request.Headers.TryGetValue("X-Correlation-Id", out var correlationId))
