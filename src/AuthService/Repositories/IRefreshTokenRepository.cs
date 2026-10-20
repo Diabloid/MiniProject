@@ -1,9 +1,9 @@
-﻿using AuthService.Entities;
+using AuthService.Entities;
 
-namespace AuthService.Repositories
+namespace AuthService.Repositories;
+
+public interface IRefreshTokenRepository : IBaseRepository<RefreshToken>
 {
-    public interface IRefreshTokenRepository : IBaseRepository<RefreshToken>
-    {
-        Task<RefreshToken?> GetByTokenAsync(string token);
-    }
+    Task<RefreshToken?> GetByTokenWithUserAsync(string token);
+    Task RevokeUserTokensAsync(int userId);
 }
