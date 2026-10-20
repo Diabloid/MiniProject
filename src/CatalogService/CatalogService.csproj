@@ -22,4 +22,8 @@
     <Folder Include="Repositories\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\MiniProject.Shared\MiniProject.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

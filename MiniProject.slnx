@@ -16,6 +16,7 @@
     <Project Path="src/ApiGateway/ApiGateway.csproj" />
     <Project Path="src/AuthService/AuthService.csproj" />
     <Project Path="src/CatalogService/CatalogService.csproj" />
+    <Project Path="src/Shared/MiniProject.Shared/MiniProject.Shared.csproj" />
   </Folder>
   <Folder Name="/src/Monolith/">
     <Project Path="src/Monolith/NovaGames.API/NovaGames.API.csproj" />
