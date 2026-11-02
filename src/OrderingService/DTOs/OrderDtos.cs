@@ -22,6 +22,14 @@ public class OrderDto
     public List<OrderItemDto> Items { get; set; } = new();
 }
 
+public class UserGameOrderStatusDto
+{
+    public bool HasPurchased { get; set; }
+    public int? OrderId { get; set; }
+    public string? Status { get; set; }
+    public DateTime? PurchaseDate { get; set; }
+}
+
 public class OrderQueryParameters
 {
     public int Page { get; set; } = 1;
