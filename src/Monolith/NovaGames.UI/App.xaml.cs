@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NovaGames.Core.Interfaces;
 using NovaGames.Core.Services;
 using NovaGames.Core.Models;
 using NovaGames.UI.Services;
+using NovaGames.UI.Services.Api;
 using NovaGames.UI.Views;
 using System.Windows;
 
@@ -23,18 +24,30 @@ namespace NovaGames.UI
             AppHost = Host.CreateDefaultBuilder()
                 .ConfigureServices((hostContext, services) =>
                 {
-                    // 1. РЕЄСТРУЄМО СЕРВІСИ
+                    // 1. РЕЄСТРУЄМО БАЗОВІ СЕРВІСИ
                     services.AddSingleton<ILogger, JsonLogger>();
                     services.AddSingleton<UserSession>();
-                    services.AddSingleton<AuthApiService>();
-                    services.AddSingleton<GameApiService>();
                     services.AddSingleton<TokenStorageService>();
                     services.AddSingleton<INavigationService, WindowNavigationService>();
-                    services.AddSingleton<UserApiService>();
-                    services.AddSingleton<CartApiService>();
                     services.AddSingleton<GameInstallerService>();
 
-                    // 2. РЕЄСТРУЄМО ВІКНА
+                    // 2. ЄДИНИЙ КЛІЄНТСЬКИЙ ШАР ДЛЯ РОБОТИ ЧЕРЕЗ API GATEWAY (ЛР4)
+                    services.AddSingleton<GatewayConfig>();
+                    services.AddTransient<AuthHandler>();
+                    services.AddHttpClient<IGatewayApiClient, GatewayApiClient>((sp, client) =>
+                    {
+                        var config = sp.GetRequiredService<GatewayConfig>();
+                        client.BaseAddress = new Uri(config.BaseUrl);
+                        client.Timeout = TimeSpan.FromSeconds(10);
+                    }).AddHttpMessageHandler<AuthHandler>();
+
+                    // 3. Сервіси моноліту для зворотної сумісності
+                    services.AddSingleton<AuthApiService>();
+                    services.AddSingleton<GameApiService>();
+                    services.AddSingleton<UserApiService>();
+                    services.AddSingleton<CartApiService>();
+
+                    // 4. РЕЄСТРУЄМО ВІКНА
                     services.AddTransient<LoginWindow>();
                     services.AddTransient<RegisterWindow>();
                     services.AddTransient<MainWindow>();
@@ -59,53 +72,62 @@ namespace NovaGames.UI
 
                 // 1. Дістаємо сервіси для перевірки токенів
                 var tokenStorage = AppHost.Services.GetRequiredService<TokenStorageService>();
-                var authService = AppHost.Services.GetRequiredService<AuthApiService>();
                 var userSession = AppHost.Services.GetRequiredService<UserSession>();
-                var navigationService = AppHost.Services.GetRequiredService<INavigationService>();
+                var authService = AppHost.Services.GetRequiredService<AuthApiService>();
 
-                // 2. Отримуємо збережені токени
-                var (savedToken, savedRefreshToken) = tokenStorage.GetTokens();
+                // 2. Зчитуємо токени із захищеного сховища
+                var (token, refreshToken) = tokenStorage.GetTokens();
 
-                if (!string.IsNullOrEmpty(savedToken) && !string.IsNullOrEmpty(savedRefreshToken))
+                if (!string.IsNullOrEmpty(token) && !string.IsNullOrEmpty(refreshToken))
                 {
-                    await _appLogger.LogAsync("Found saved tokens. Attempting auto-login...", LogType.INFO);
+                    await _appLogger.LogAsync("Знайдено збережені токени. Спроба автологіну...", LogType.INFO);
 
-                    // Метод RefreshTokensAsync читає токени з сесії, тому ми спочатку кладемо зашифровані токени з диску в сесію:
-                    userSession.Token = savedToken;
-                    userSession.RefreshToken = savedRefreshToken;
+                    userSession.Token = token;
+                    userSession.RefreshToken = refreshToken;
 
-                    // Тепер викликаємо метод (БЕЗ АРГУМЕНТІВ), і він поверне true або false
-                    bool isSuccess = await authService.RefreshTokensAsync();
+                    bool refreshed = await authService.RefreshTokensAsync();
 
-                    if (isSuccess)
+                    if (refreshed)
                     {
-                        await _appLogger.LogAsync($"Auto-login successful for user: {userSession.CurrentUser?.Username}", LogType.INFO);
+                        await _appLogger.LogAsync($"Автологін успішний! Вітаємо, {userSession.CurrentUser?.Username}.", LogType.INFO);
 
-                        // Відкриваємо MainWindow одразу в максимізованому стані
                         var mainWindow = AppHost.Services.GetRequiredService<MainWindow>();
-                        mainWindow.WindowState = WindowState.Maximized;
                         mainWindow.Show();
-                        return; // Виходимо, щоб не відкривати LoginWindow
+                        return;
                     }
                     else
                     {
-                        // Якщо токен прострочений або сервер відхилив - чистимо сесію
-                        userSession.Token = null;
-                        userSession.RefreshToken = null;
+                        await _appLogger.LogAsync("Токен застарів і не зміг оновитися. Очищаємо сесію.", LogType.WARNING);
+                        tokenStorage.ClearToken();
                     }
                 }
 
-                // 3. Якщо автологін не вдався або токенів немає — відкриваємо LoginWindow
-                await _appLogger.LogAsync("Auto-login skipped or failed. Showing LoginWindow.", LogType.INFO);
+                // 3. Якщо автологін не вдався - показуємо вікно логіну
                 var loginWindow = AppHost.Services.GetRequiredService<LoginWindow>();
                 loginWindow.Show();
             }
             catch (Exception ex)
             {
-                await _appLogger?.LogAsync($"CRITICAL STARTUP ERROR: {ex.Message}", LogType.ERROR);
-                MessageBox.Show($"Критична помилка під час запуску: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
-                Shutdown();
+                await _appLogger!.LogAsync($"Помилка під час ініціалізації додатку: {ex.Message}", LogType.ERROR);
+                var loginWindow = AppHost.Services.GetRequiredService<LoginWindow>();
+                loginWindow.Show();
             }
+        }
+
+        private async void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        {
+            if (_appLogger != null)
+            {
+                await _appLogger.LogAsync($"НЕПЕРЕХОПЛЕНА КРИТИЧНА ПОМИЛКА: {e.Exception.Message}\nСтек: {e.Exception.StackTrace}", LogType.ERROR);
+            }
+
+            MessageBox.Show(
+                "Сталася неочікувана помилка в роботі додатку. Ми записали деталі у журнал.",
+                "Критична помилка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            e.Handled = true;
         }
 
         protected override async void OnExit(ExitEventArgs e)
@@ -113,20 +135,9 @@ namespace NovaGames.UI
             if (AppHost != null)
             {
                 await AppHost.StopAsync();
+                AppHost.Dispose();
             }
             base.OnExit(e);
-        }
-
-        // Цей метод ловить ВСІ помилки, які ми забули огорнути в try-catch
-        private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
-        {
-            if (_appLogger != null)
-            {
-                _ = _appLogger.LogAsync($"UNHANDLED EXCEPTION: {e.Exception.Message}\nStack Trace: {e.Exception.StackTrace}", LogType.ERROR);
-            }
-
-            MessageBox.Show($"Сталася неочікувана помилка: {e.Exception.Message}", "Ауч!", MessageBoxButton.OK, MessageBoxImage.Error);
-            e.Handled = true;
         }
     }
 }

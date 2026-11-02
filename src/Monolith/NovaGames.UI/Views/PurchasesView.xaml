@@ -1,12 +1,192 @@
-﻿<UserControl x:Class="NovaGames.UI.Views.PurchasesView"
+<UserControl x:Class="NovaGames.UI.Views.PurchasesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:NovaGames.UI.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-        <TextBlock Text="ТУТ БУДУТЬ ПОКУПКИ" Foreground="#555555" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+             d:DesignHeight="600" d:DesignWidth="900"
+             Background="#141414">
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Заголовок екрана та кнопка оновлення -->
+        <Grid Grid.Row="0" Margin="0,0,0,25">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="📦" FontSize="26" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                <TextBlock Text="МОЇ ОПЕРАЦІЇ ТА ЗАМОВЛЕННЯ" 
+                           Foreground="#FFFFFF" 
+                           FontSize="24" 
+                           FontWeight="Bold" 
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <Button x:Name="btnRefresh" 
+                    Content="🔄 ОНОВИТИ" 
+                    HorizontalAlignment="Right" 
+                    Padding="16,8"
+                    Background="#252525" 
+                    Foreground="#00ADEF" 
+                    BorderBrush="#333333" 
+                    BorderThickness="1"
+                    Cursor="Hand"
+                    FontWeight="SemiBold"
+                    Click="BtnRefresh_Click"/>
+        </Grid>
+
+        <!-- 4 СТАНИ ЕКРАНА (ЛР4 п. 5.2) -->
+
+        <!-- 1. Стан ЗАВАНТАЖЕННЯ (Loading) -->
+        <StackPanel x:Name="panelLoading" 
+                    Grid.Row="1" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center"
+                    Visibility="Collapsed">
+            <ProgressBar IsIndeterminate="True" Width="200" Height="6" Foreground="#00ADEF" Background="#222222" Margin="0,0,0,15"/>
+            <TextBlock Text="Завантаження списку операцій через API Gateway..." 
+                       Foreground="#888888" 
+                       FontSize="14" 
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- 2. Стан ПОМИЛКИ (Error з можливістю повтору) -->
+        <StackPanel x:Name="panelError" 
+                    Grid.Row="1" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center"
+                    Visibility="Collapsed">
+            <TextBlock Text="⚠️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+            <TextBlock x:Name="txtErrorMessage" 
+                       Text="Не вдалося отримати список операцій. Перевірте з'єднання зі шлюзом." 
+                       Foreground="#FF5252" 
+                       FontSize="16" 
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center" 
+                       Margin="0,0,0,15"/>
+            <Button Content="ПОВТОРИТИ СПРОБУ" 
+                    Background="#00ADEF" 
+                    Foreground="#FFFFFF" 
+                    FontWeight="Bold" 
+                    Padding="20,10"
+                    BorderThickness="0" 
+                    Cursor="Hand"
+                    Click="BtnRetry_Click"/>
+        </StackPanel>
+
+        <!-- 3. Стан ПОРОЖНЬО (Empty - «нічого не знайдено») -->
+        <StackPanel x:Name="panelEmpty" 
+                    Grid.Row="1" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center"
+                    Visibility="Collapsed">
+            <TextBlock Text="🛒" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+            <TextBlock Text="У вас ще немає оформлених операцій чи замовлень" 
+                       Foreground="#AAAAAA" 
+                       FontSize="18" 
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center" 
+                       Margin="0,0,0,15"/>
+            <TextBlock Text="Перегляньте доступні ігри в каталозі магазину" 
+                       Foreground="#666666" 
+                       FontSize="14" 
+                       HorizontalAlignment="Center" 
+                       Margin="0,0,0,20"/>
+            <Button Content="ПЕРЕЙТИ В КАТАЛОГ" 
+                    Background="#00ADEF" 
+                    Foreground="#FFFFFF" 
+                    FontWeight="Bold" 
+                    Padding="24,10"
+                    BorderThickness="0" 
+                    Cursor="Hand"
+                    Click="BtnGoToCatalog_Click"/>
+        </StackPanel>
+
+        <!-- 4. Стан УСПІХУ (Success - список операцій) -->
+        <ScrollViewer x:Name="scrollContent" Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="listOrders">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#1C1C1C" 
+                                BorderBrush="#2C2C2C" 
+                                BorderThickness="1" 
+                                CornerRadius="8" 
+                                Padding="20" 
+                                Margin="0,0,0,16">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Шапка картки: Номер, дата, бейдж статусу -->
+                                <Grid Grid.Row="0" Margin="0,0,0,12">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Замовлення #" Foreground="#888888" FontSize="14"/>
+                                        <TextBlock Text="{Binding Id}" Foreground="#FFFFFF" FontWeight="Bold" FontSize="16" Margin="4,0,15,0"/>
+                                        <TextBlock Text="{Binding OrderDate, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" Foreground="#666666" FontSize="13" VerticalAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <!-- Бейдж статусу -->
+                                    <Border HorizontalAlignment="Right" 
+                                            CornerRadius="4" 
+                                            Padding="10,4"
+                                            Background="#252525">
+                                        <TextBlock Text="{Binding Status}" 
+                                                   FontWeight="Bold" 
+                                                   FontSize="12"
+                                                   Foreground="#00ADEF"/>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Список позицій у замовленні -->
+                                <ItemsControl Grid.Row="1" ItemsSource="{Binding Items}" Margin="0,0,0,12">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3">
+                                                <TextBlock Text="{Binding Title}" Foreground="#DDDDDD" FontSize="14"/>
+                                                <TextBlock Text="{Binding Subtotal, StringFormat='{}{0:N2} ₴'}" 
+                                                           Foreground="#00ADEF" 
+                                                           FontWeight="SemiBold" 
+                                                           HorizontalAlignment="Right"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Separator Grid.Row="2" Background="#262626" Margin="0,0,0,12"/>
+
+                                <!-- Підсумок та кнопка скасування -->
+                                <Grid Grid.Row="2" Margin="0,12,0,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Загальна сума: " Foreground="#888888" FontSize="14" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TotalAmount, StringFormat='{}{0:N2} ₴'}" 
+                                                   Foreground="#00E676" 
+                                                   FontSize="18" 
+                                                   FontWeight="Bold" 
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <Button Content="СКАСУВАТИ" 
+                                            HorizontalAlignment="Right"
+                                            Background="#2B1A1A" 
+                                            Foreground="#FF5252" 
+                                            BorderBrush="#FF5252" 
+                                            BorderThickness="1"
+                                            Padding="14,6" 
+                                            Cursor="Hand"
+                                            FontWeight="SemiBold"
+                                            Tag="{Binding Id}"
+                                            Click="BtnCancelOrder_Click"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
     </Grid>
 </UserControl>

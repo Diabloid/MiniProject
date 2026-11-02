@@ -1,4 +1,4 @@
-п»їusing Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using NovaGames.Core.Entities;
 using NovaGames.Core.Services;
 using NovaGames.UI.Models.DTOs;
@@ -15,15 +15,15 @@ namespace NovaGames.UI.Services
     public class GameApiService
     {
         private readonly HttpClient _httpClient;
-        private const string BaseUrl = "https://localhost:7232/api/v1/games";
-        private const string UploadUrl = "https://localhost:7232/api/v1/upload/image";
+        private const string BaseUrl = "http://localhost:5000/api/v1/games";
+        private const string UploadUrl = "http://localhost:5000/api/v1/upload/image";
 
         public GameApiService()
         {
             _httpClient = new HttpClient();
         }
 
-        // Р‘РђР—РћР’РР™ РњР•РўРћР” Р”Р›РЇ Р’РЎР†РҐ РђР’РўРћР РР—РћР’РђРќРРҐ Р—РђРџРРўР†Р’
+        // БАЗОВИЙ МЕТОД ДЛЯ ВСІХ АВТОРИЗОВАНИХ ЗАПИТІВ
         private async Task<HttpResponseMessage> ExecuteWithAuthAsync(Func<HttpRequestMessage> requestFactory, bool requireAuth = true)
         {
             var session = App.AppHost!.Services.GetRequiredService<UserSession>();
@@ -45,20 +45,20 @@ namespace NovaGames.UI.Services
                 }
                 else
                 {
-                    throw new UnauthorizedAccessException("Р’Р°С€Р° СЃРµСЃС–СЏ Р·Р°РєС–РЅС‡РёР»Р°СЃСЏ. Р‘СѓРґСЊ Р»Р°СЃРєР°, СѓРІС–Р№РґС–С‚СЊ Р·РЅРѕРІСѓ.");
+                    throw new UnauthorizedAccessException("Ваша сесія закінчилася. Будь ласка, увійдіть знову.");
                 }
             }
 
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
-                throw new UnauthorizedAccessException("Р’Р°С€С– РїСЂР°РІР° РґРѕСЃС‚СѓРїСѓ Р±СѓР»Рё Р·РјС–РЅРµРЅС–. Р”РѕСЃС‚СѓРї Р·Р°Р±РѕСЂРѕРЅРµРЅРѕ.");
+                throw new UnauthorizedAccessException("Ваші права доступу були змінені. Доступ заборонено.");
             }
 
             response.EnsureSuccessStatusCode();
             return response;
         }
 
-        // РџРЈР‘Р›Р†Р§РќР† РњР•РўРћР”Р
+        // ПУБЛІЧНІ МЕТОДИ
         public async Task<List<Game>> GetAllGamesAsync(bool forAdmin = false)
         {
             try
@@ -69,7 +69,7 @@ namespace NovaGames.UI.Services
             }
             catch (HttpRequestException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° РїС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ API: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка підключення до API: {ex.Message}");
                 return new List<Game>();
             }
         }
@@ -134,7 +134,7 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С„Р°Р№Р»Сѓ: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка завантаження файлу: {ex.Message}");
                 throw;
             }
         }
@@ -143,7 +143,7 @@ namespace NovaGames.UI.Services
         {
             try
             {
-                // requireAuth: false, Р±Рѕ СЃС‚РѕСЂС–РЅРєСѓ РіСЂРё РјРѕР¶Рµ РґРёРІРёС‚РёСЃСЏ Р±СѓРґСЊ-С…С‚Рѕ
+                // requireAuth: false, бо сторінку гри може дивитися будь-хто
                 var response = await ExecuteWithAuthAsync(() => new HttpRequestMessage(HttpMethod.Get, $"{BaseUrl}/{id}"), requireAuth: false);
 
                 if (response.IsSuccessStatusCode)
@@ -154,7 +154,7 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ РіСЂРё: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка завантаження гри: {ex.Message}");
                 return null;
             }
         }
@@ -183,7 +183,7 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ Р°СЂС…С–РІСѓ: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка завантаження архіву: {ex.Message}");
                 return string.Empty;
             }
         }
@@ -204,7 +204,7 @@ namespace NovaGames.UI.Services
                     return hasOwners;
                 }
 
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° API: {response.StatusCode}. Р’С–РґРїРѕРІС–РґСЊ: {rawJson}");
+                System.Diagnostics.Debug.WriteLine($"Помилка API: {response.StatusCode}. Відповідь: {rawJson}");
                 return true;
             }
             catch (Exception ex)
@@ -219,14 +219,14 @@ namespace NovaGames.UI.Services
             public string Url { get; set; } = string.Empty;
         }
 
-        // РњР•РўРћР”Р Р”Р›РЇ Р’Р†Р”Р“РЈРљР†Р’
+        // МЕТОДИ ДЛЯ ВІДГУКІВ
 
         public async Task<List<ReviewResponseDto>> GetReviewsForGameAsync(int productId)
         {
             try
             {
-                // requireAuth: false - С‡РёС‚Р°С‚Рё РјРѕР¶СѓС‚СЊ РІСЃС–
-                string url = $"https://localhost:7232/api/reviews/product/{productId}";
+                // requireAuth: false - читати можуть всі
+                string url = $"http://localhost:5000/api/reviews/product/{productId}";
                 var response = await ExecuteWithAuthAsync(() => new HttpRequestMessage(HttpMethod.Get, url), requireAuth: false);
 
                 if (response.IsSuccessStatusCode)
@@ -237,7 +237,7 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ РІС–РґРіСѓРєС–РІ: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка завантаження відгуків: {ex.Message}");
                 return new List<ReviewResponseDto>();
             }
         }
@@ -246,10 +246,10 @@ namespace NovaGames.UI.Services
         {
             try
             {
-                // requireAuth: true - РїРёСЃР°С‚Рё РјРѕР¶СѓС‚СЊ С‚С–Р»СЊРєРё Р°РІС‚РѕСЂРёР·РѕРІР°РЅС– СЋР·РµСЂРё Р· РґС–Р№СЃРЅРёРј JWT-С‚РѕРєРµРЅРѕРј
+                // requireAuth: true - писати можуть тільки авторизовані юзери з дійсним JWT-токеном
                 var response = await ExecuteWithAuthAsync(() =>
                 {
-                    var request = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7232/api/reviews");
+                    var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:5000/api/reviews");
                     request.Content = JsonContent.Create(dto);
                     return request;
                 }, requireAuth: true);
@@ -258,7 +258,7 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° РґРѕРґР°РІР°РЅРЅСЏ РІС–РґРіСѓРєСѓ: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка додавання відгуку: {ex.Message}");
                 return false;
             }
         }
@@ -269,7 +269,7 @@ namespace NovaGames.UI.Services
             {
                 var response = await ExecuteWithAuthAsync(() =>
                 {
-                    var request = new HttpRequestMessage(HttpMethod.Put, $"https://localhost:7232/api/reviews/{reviewId}");
+                    var request = new HttpRequestMessage(HttpMethod.Put, $"http://localhost:5000/api/reviews/{reviewId}");
                     request.Content = JsonContent.Create(dto);
                     return request;
                 }, requireAuth: true);
@@ -278,7 +278,7 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° СЂРµРґР°РіСѓРІР°РЅРЅСЏ РІС–РґРіСѓРєСѓ: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка редагування відгуку: {ex.Message}");
                 return false;
             }
         }
@@ -289,14 +289,14 @@ namespace NovaGames.UI.Services
             {
                 var response = await ExecuteWithAuthAsync(() =>
                 {
-                    return new HttpRequestMessage(HttpMethod.Delete, $"https://localhost:7232/api/reviews/{reviewId}");
+                    return new HttpRequestMessage(HttpMethod.Delete, $"http://localhost:5000/api/reviews/{reviewId}");
                 }, requireAuth: true);
 
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° РІРёРґР°Р»РµРЅРЅСЏ РІС–РґРіСѓРєСѓ: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка видалення відгуку: {ex.Message}");
                 return false;
             }
         }

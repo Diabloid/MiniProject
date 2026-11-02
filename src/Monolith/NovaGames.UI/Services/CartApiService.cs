@@ -1,4 +1,4 @@
-п»їusing NovaGames.Core.Entities;
+using NovaGames.Core.Entities;
 using NovaGames.Core.Services;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -11,9 +11,9 @@ namespace NovaGames.UI.Services
     {
         private readonly HttpClient _httpClient;
         private readonly UserSession _userSession;
-        private const string BaseUrl = "https://localhost:7232/api/v1/cart";
+        private const string BaseUrl = "http://localhost:5000/api/v1/cart";
 
-        // РљР•РЁ РљРћРЁРРљРђ
+        // КЕШ КОШИКА
         public HashSet<int> CartGameIds { get; private set; } = new HashSet<int>();
 
         public CartApiService(UserSession userSession)
@@ -47,7 +47,7 @@ namespace NovaGames.UI.Services
             catch {}
         }
 
-        // РџРћР”Р†РЇ Р”Р›РЇ UI: РІРёРєР»РёРєР°С”С‚СЊСЃСЏ, РєРѕР»Рё РєС–Р»СЊРєС–СЃС‚СЊ С‚РѕРІР°СЂС–РІ Р·РјС–РЅРёР»Р°СЃСЏ
+        // ПОДІЯ ДЛЯ UI: викликається, коли кількість товарів змінилася
         public event Action<int>? CartCountChanged;
 
         public async Task<List<Game>> GetCartGamesAsync()
@@ -58,7 +58,7 @@ namespace NovaGames.UI.Services
                 var response = await _httpClient.GetAsync($"{BaseUrl}/my-items");
                 if (response.IsSuccessStatusCode)
                 {
-                    // Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”РјРѕ СЃС‚Р°РЅРґР°СЂС‚РЅРёР№ РїР°СЂСЃРµСЂ, СЏРє Сѓ GameApiService
+                    // Використовуємо стандартний парсер, як у GameApiService
                     var games = await response.Content.ReadFromJsonAsync<List<Game>>();
                     if (games != null)
                     {
@@ -70,12 +70,12 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ РєРѕС€РёРєР°: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка завантаження кошика: {ex.Message}");
             }
             return new List<Game>();
         }
 
-        // РњРµС‚РѕРґ РґРѕРґР°РІР°РЅРЅСЏ РІ РєРѕС€РёРє
+        // Метод додавання в кошик
         public async Task<bool> AddToCartAsync(int productId)
         {
             SetAuthHeader();
@@ -96,20 +96,20 @@ namespace NovaGames.UI.Services
             if (response.IsSuccessStatusCode)
             {
                 CartGameIds.Remove(productId);
-                CartCountChanged?.Invoke(CartGameIds.Count); // РћРЅРѕРІР»СЋС”РјРѕ Р±РµР№РґР¶ Сѓ СЂРµР°Р»СЊРЅРѕРјСѓ С‡Р°СЃС–
+                CartCountChanged?.Invoke(CartGameIds.Count); // Оновлюємо бейдж у реальному часі
                 return true;
             }
             return false;
         }
 
-        // РњРµС‚РѕРґ РѕС„РѕСЂРјР»РµРЅРЅСЏ Р·Р°РјРѕРІР»РµРЅРЅСЏ (РћРїР»Р°С‚Р° РіР°РјР°РЅС†РµРј)
-        // РњРµС‚РѕРґ РѕС„РѕСЂРјР»РµРЅРЅСЏ Р·Р°РјРѕРІР»РµРЅРЅСЏ (РћРїР»Р°С‚Р° РіР°РјР°РЅС†РµРј Р°Р±Рѕ РєР°СЂС‚РєРѕСЋ)
+        // Метод оформлення замовлення (Оплата гаманцем)
+        // Метод оформлення замовлення (Оплата гаманцем або карткою)
         public async Task<(bool Success, string ErrorMessage, CheckoutResponse? Data)> CheckoutAsync(CheckoutRequest request)
         {
             SetAuthHeader();
             try
             {
-                // Р’С–РґРїСЂР°РІР»СЏС”РјРѕ РЅР°С€ request Сѓ С‚С–Р»С– POST-Р·Р°РїРёС‚Сѓ!
+                // Відправляємо наш request у тілі POST-запиту!
                 var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/checkout", request);
 
                 if (response.IsSuccessStatusCode)
@@ -127,12 +127,12 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                return (false, $"РџРѕРјРёР»РєР° Р·'С”РґРЅР°РЅРЅСЏ: {ex.Message}", null);
+                return (false, $"Помилка з'єднання: {ex.Message}", null);
             }
         }
     }
 
-    // РњРѕРґРµР»СЊ РІС–РґРїРѕРІС–РґС– РїС–СЃР»СЏ СѓСЃРїС–С€РЅРѕС— РїРѕРєСѓРїРєРё
+    // Модель відповіді після успішної покупки
     public class CheckoutResponse
     {
         public decimal NewBalance { get; set; }
@@ -141,9 +141,9 @@ namespace NovaGames.UI.Services
 
     public class CheckoutRequest
     {
-        public string PaymentMethod { get; set; } = "Wallet"; // "Wallet" Р°Р±Рѕ "Card"
+        public string PaymentMethod { get; set; } = "Wallet"; // "Wallet" або "Card"
 
-        // Р”Р°РЅС– РєР°СЂС‚РєРё (РїРѕС‚СЂС–Р±РЅС– С‚С–Р»СЊРєРё СЏРєС‰Рѕ PaymentMethod == "Card")
+        // Дані картки (потрібні тільки якщо PaymentMethod == "Card")
         public string CardNumber { get; set; } = string.Empty;
         public string ExpiryDate { get; set; } = string.Empty;
         public string Cvv { get; set; } = string.Empty;

@@ -1,4 +1,4 @@
-п»їusing Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using NovaGames.Core.Entities;
 using NovaGames.Core.Interfaces;
 using NovaGames.Core.Models;
@@ -21,13 +21,13 @@ namespace NovaGames.UI
     {
         private readonly GameApiService _gameService;
 
-        // 1. Р”РћР”РђР„РњРћ РџРћР›Р• Р”Р›РЇ РЎР•РЎР†Р‡ РўРЈРў
+        // 1. ДОДАЄМО ПОЛЕ ДЛЯ СЕСІЇ ТУТ
         private readonly UserSession _userSession;
         private readonly User? _currentUser;
         private readonly UserApiService _userService;
         private readonly CartApiService _cartService;
 
-        // РљРµС€РѕРІР°РЅС– РµРєР·РµРјРїР»СЏСЂРё СЃС‚РѕСЂС–РЅРѕРє
+        // Кешовані екземпляри сторінок
         private StoreView? _storeView;
         private LibraryView? _libraryView;
         private AdminView? _adminView;
@@ -38,7 +38,7 @@ namespace NovaGames.UI
         private readonly ILogger _logger;
 
         private decimal _pendingReplenishAmount = 0;
-        // РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
+        // Конструктор
         public MainWindow(UserSession session, GameApiService gameService)
         {
             InitializeComponent();
@@ -46,13 +46,13 @@ namespace NovaGames.UI
             _userService = App.AppHost!.Services.GetRequiredService<UserApiService>();
             _logger = App.AppHost!.Services.GetRequiredService<ILogger>();
 
-            // 2. Р—Р‘Р•Р Р†Р“РђР„РњРћ РЎР•РЎР†Р® Р’ РќРђРЁР• РџРћР›Р•
+            // 2. ЗБЕРІГАЄМО СЕСІЮ В НАШЕ ПОЛЕ
             _userSession = session;
 
-            // Р”С–СЃС‚Р°С”РјРѕ СЋР·РµСЂР° Р· СЃРµСЃС–С—
+            // Дістаємо юзера з сесії
             if (_userSession.CurrentUser == null)
             {
-                System.Windows.MessageBox.Show("РџРѕРјРёР»РєР° СЃРµСЃС–С—. РЈРІС–Р№РґС–С‚СЊ Р·РЅРѕРІСѓ.");
+                System.Windows.MessageBox.Show("Помилка сесії. Увійдіть знову.");
                 Close();
                 return;
             }
@@ -66,7 +66,7 @@ namespace NovaGames.UI
             this.Loaded += (s, e) =>
             {
                 btnNavStore.IsChecked = true;
-                // Р’РёРєР»РёРєР°С”РјРѕ РјРµС‚РѕРґ РїСЂРё СЃС‚Р°СЂС‚С–, С‰РѕР± РѕРґСЂР°Р·Сѓ РЅР°РјР°Р»СЋРІР°С‚Рё Р°РІР°С‚Р°СЂРєСѓ!
+                // Викликаємо метод при старті, щоб одразу намалювати аватарку!
                 UpdateHeaderAvatar();
             };
 
@@ -75,24 +75,24 @@ namespace NovaGames.UI
                 if (MyNotifyIcon != null)
                 {
                     MyNotifyIcon.Visibility = Visibility.Collapsed;
-                    MyNotifyIcon.Dispose(); // РџСЂРёРјСѓСЃРѕРІРѕ Р·РЅРёС‰СѓС”РјРѕ СЂРµСЃСѓСЂСЃ Windows
+                    MyNotifyIcon.Dispose(); // Примусово знищуємо ресурс Windows
                 }
             };
 
             _cartService = App.AppHost!.Services.GetRequiredService<CartApiService>();
-            // РџС–РґРїРёСЃСѓС”РјРѕСЃСЏ РЅР° РѕРЅРѕРІР»РµРЅРЅСЏ Р· ProfileView
+            // Підписуємося на оновлення з ProfileView
             _userSession.CurrentUserUpdated += UpdateHeaderAvatar;
-            // РџР†Р”РџРРЎРљРђ РќРђ РћРќРћР’Р›Р•РќРќРЇ РљРћРЁРРљРђ
+            // ПІДПИСКА НА ОНОВЛЕННЯ КОШИКА
             _cartService.CartCountChanged += UpdateCartBadge;
 
-            // РџРѕС‡Р°С‚РєРѕРІРµ Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ РїСЂРё СЃС‚Р°СЂС‚С– РїСЂРѕРіСЂР°РјРё
+            // Початкове завантаження при старті програми
             _ = _cartService.LoadMyCartIdsAsync();
 
-            // Р’СЃС‚Р°РЅРѕРІР»СЋС”РјРѕ Р±Р°Р»Р°РЅСЃ РіР°РјР°РЅС†СЏ
-            txtBalance.Text = $"{_currentUser.WalletBalance:0.00} в‚ґ";
+            // Встановлюємо баланс гаманця
+            txtBalance.Text = $"{_currentUser.WalletBalance:0.00} ?";
 
             this.MouseDown += Window_MouseDown;
-            // this.PreviewMouseDown += Window_PreviewMouseDown; // РЇРєС‰Рѕ С” С‚Р°РєРёР№ РјРµС‚РѕРґ, Р·Р°Р»РёС€Р°Р№
+            // this.PreviewMouseDown += Window_PreviewMouseDown; // Якщо є такий метод, залишай
             this.StateChanged += MainWindow_StateChanged;
         }
 
@@ -102,11 +102,11 @@ namespace NovaGames.UI
             {
                 if (count > 0)
                 {
-                    // РЇРєС‰Рѕ badge СЃРІС–С‚РёС‚СЊСЃСЏ С‡РµСЂРІРѕРЅРёРј - РїРµСЂРµРєРѕРЅР°Р№СЃСЏ, С‰Рѕ РІ XAML 
-                    // РІС–РЅ РќР• РІСЃРµСЂРµРґРёРЅС– <ControlTemplate> С‡Рё <Style>
+                    // Якщо badge світиться червоним - переконайся, що в XAML 
+                    // він НЕ всередині <ControlTemplate> чи <Style>
                     badge.Visibility = Visibility.Visible;
 
-                    // Р—РІРµСЂС‚Р°С”РјРѕСЃСЏ РЅР°РїСЂСЏРјСѓ РґРѕ С‚РµРєСЃС‚Сѓ Р±РµР№РґР¶Р° (Р·Р°РјС–СЃС‚СЊ С‚РёС… СЃС‚СЂР°С€РЅРёС… РєР°СЃС‚С–РІ)
+                    // Звертаємося напряму до тексту бейджа (замість тих страшних кастів)
                     txtBadgeCount.Text = count.ToString();
                 }
                 else
@@ -121,21 +121,21 @@ namespace NovaGames.UI
             var user = _userSession.CurrentUser;
             if (user == null) return;
 
-            // 1. РћРЅРѕРІР»СЋС”РјРѕ Р±СѓРєРІСѓ С– С–Рј'СЏ
+            // 1. Оновлюємо букву і ім'я
             if (!string.IsNullOrEmpty(user.Username))
             {
                 txtHeaderAvatarLetter.Text = user.Username.Substring(0, 1).ToUpper();
                 btnUserProfile.Content = user.Username;
             }
 
-            // 2. РћРЅРѕРІР»СЋС”РјРѕ РєРѕР»С–СЂ СЂР°РјРєРё
+            // 2. Оновлюємо колір рамки
             try
             {
                 HeaderAvatarBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(user.AvatarBorderColorHex));
             }
-            catch { /* Р†РіРЅРѕСЂСѓС”РјРѕ, СЏРєС‰Рѕ РєРѕР»С–СЂ Р±РёС‚РёР№ */ }
+            catch { /* Ігноруємо, якщо колір битий */ }
 
-            // 3. РћРЅРѕРІР»СЋС”РјРѕ РєР°СЂС‚РёРЅРєСѓ
+            // 3. Оновлюємо картинку
             if (!string.IsNullOrEmpty(user.AvatarUrl))
             {
                 try
@@ -145,12 +145,12 @@ namespace NovaGames.UI
 
                     if (user.AvatarUrl.StartsWith("/images/"))
                     {
-                        bitmap.UriSource = new Uri($"https://localhost:7232{user.AvatarUrl}", UriKind.Absolute);
+                        bitmap.UriSource = new Uri($"http://localhost:5000{user.AvatarUrl}", UriKind.Absolute);
                         bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
                     }
                     else
                     {
-                        // Р—Р°Р»РёС€Р°С”РјРѕ РґР»СЏ СЃС‚Р°СЂРёС… РїСЂРѕС„С–Р»С–РІ Р· Base64
+                        // Залишаємо для старих профілів з Base64
                         byte[] imageBytes = Convert.FromBase64String(user.AvatarUrl);
                         bitmap.StreamSource = new MemoryStream(imageBytes);
                     }
@@ -163,7 +163,7 @@ namespace NovaGames.UI
                 }
                 catch (Exception ex)
                 {
-                    _ = _logger?.LogAsync($"РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё РјС–РЅС–-Р°РІР°С‚Р°СЂРєСѓ РІ С…РµРґРµСЂС–: {ex.Message}", LogType.WARNING);
+                    _ = _logger?.LogAsync($"Не вдалося завантажити міні-аватарку в хедері: {ex.Message}", LogType.WARNING);
                     imgHeaderAvatar.Visibility = Visibility.Collapsed;
                 }
             }
@@ -173,30 +173,30 @@ namespace NovaGames.UI
             }
         }
 
-        // Р—РЅСЏС‚С‚СЏ С„РѕРєСѓСЃСѓ Р· РїРѕР»С–РІ РІРІРѕРґСѓ РїСЂРё РєР»С–РєСѓ РЅР° РІС–РєРЅРѕ
+        // Зняття фокусу з полів вводу при кліку на вікно
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
             Keyboard.ClearFocus();
         }
 
 
-        // РџРѕС€СѓРє
+        // Пошук
         private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             string searchText = txtSearch.Text.Trim();
 
-            // 1. РћРЅРѕРІР»СЋС”РјРѕ СЃР°Рј РјР°РіР°Р·РёРЅ
+            // 1. Оновлюємо сам магазин
             if (MainContent.Content is StoreView storeView)
                 storeView.UpdateSearch(searchText);
 
-            // 2. Р›РѕС–РєР° РґР»СЏ Popup Р· РїС–РґРєР°Р·РєР°РјРё
+            // 2. Лоіка для Popup з підказками
             if (string.IsNullOrEmpty(searchText) || _storeView == null)
             {
                 SearchPopup.IsOpen = false;
                 return;
             }
 
-            // Р—РІРµСЂС‚Р°С”РјРѕСЃСЏ РґРѕ РјРµС‚РѕРґСѓ Сѓ StoreView
+            // Звертаємося до методу у StoreView
             var suggestions = _storeView.GetSearchSuggestions(searchText);
 
             if (suggestions.Any())
@@ -210,7 +210,7 @@ namespace NovaGames.UI
             }
         }
 
-        // РљРѕР»Рё РјРё Р·РЅРѕРІСѓ РєР»С–РєР°С”РјРѕ РІ РїРѕР»Рµ РїРѕС€СѓРєСѓ
+        // Коли ми знову клікаємо в поле пошуку
         private void TxtSearch_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(txtSearch.Text) && listSearchSuggestions.HasItems)
@@ -219,7 +219,7 @@ namespace NovaGames.UI
             }
         }
 
-        // РћР±СЂРѕР±РЅРёРє РєР»С–РєСѓ РїРѕ РјС–РЅС–-РєР°СЂС‚С†С– РІ Popup
+        // Обробник кліку по міні-картці в Popup
         private void ListSearchSuggestions_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (listSearchSuggestions.SelectedItem is Game selectedGame)
@@ -233,29 +233,29 @@ namespace NovaGames.UI
             }
         }
 
-        // --- Р’Р†РљРћРќРќР† РћРџР•Р РђР¦Р†Р‡ ---
+        // --- ВІКОННІ ОПЕРАЦІЇ ---
 
         private void Header_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // РџРµСЂРµРІС–СЂСЏС”РјРѕ РєР»С–Рє, Р±Рѕ СЏРєС‰Рѕ РІС–РєРЅРѕ РЅР° РІРµСЃСЊ РµРєСЂР°РЅ, РїРµСЂРµС‚СЏРіСѓРІР°С‚Рё РЅРµ РјРѕР¶РЅР°
+            // Перевіряємо клік, бо якщо вікно на весь екран, перетягувати не можна
             if (e.ChangedButton == MouseButton.Left && this.WindowState == WindowState.Normal)
                 this.DragMove();
 
-            // РЇРєС‰Рѕ РїРѕРґРІС–Р№РЅРёР№ РєР»С–Рє РїРѕ С€Р°РїС†С– - СЂРѕР·РіРѕСЂС‚Р°С”РјРѕ/Р·РіРѕСЂС‚Р°С”РјРѕ
+            // Якщо подвійний клік по шапці - розгортаємо/згортаємо
             if (e.ClickCount == 2)
                 ToggleMaximize();
         }
 
         private void BtnMinimize_Click(object sender, RoutedEventArgs e)
         {
-            // Р—Р°РїР°Рј'СЏС‚РѕРІСѓС”РјРѕ СЃС‚Р°РЅ РґР»СЏ РїСЂР°РІРёР»СЊРЅРѕРіРѕ СЂРѕР·РіРѕСЂС‚Р°РЅРЅСЏ РїРѕС‚С–Рј
+            // Запам'ятовуємо стан для правильного розгортання потім
             _previousState = this.WindowState;
 
-            // РњРёС‚С‚С”РІРµ Р·РіРѕСЂС‚Р°РЅРЅСЏ Р±РµР· Р°РЅС–РјР°С†С–Р№
+            // Миттєве згортання без анімацій
             this.WindowState = WindowState.Minimized;
         }
 
-        // Р›РѕРіС–РєР° РєРЅРѕРїРєРё СЂРѕР·РіРѕСЂС‚Р°РЅРЅСЏ/Р·РіРѕСЂС‚Р°РЅРЅСЏ
+        // Логіка кнопки розгортання/згортання
         private void BtnMaximize_Click(object sender, RoutedEventArgs e)
         {
             ToggleMaximize();
@@ -263,23 +263,23 @@ namespace NovaGames.UI
 
         private void MainWindow_StateChanged(object sender, EventArgs e)
         {
-            // РЇРєС‰Рѕ РІС–РєРЅРѕ СЂРѕР·РіРѕСЂС‚Р°С”С‚СЊСЃСЏ (РїРµСЂРµСЃС‚Р°С” Р±СѓС‚Рё Minimized)
+            // Якщо вікно розгортається (перестає бути Minimized)
             if (this.WindowState != WindowState.Minimized)
             {
-                // 1. Р’Р±РёРІР°С”РјРѕ СЃС‚Р°СЂСѓ Р°РЅС–РјР°С†С–СЋ С– РїРѕРІРµСЂС‚Р°С”РјРѕ 100% РїСЂРѕР·РѕСЂРѕСЃС‚С–
+                // 1. Вбиваємо стару анімацію і повертаємо 100% прозорості
                 this.BeginAnimation(UIElement.OpacityProperty, null);
                 this.Opacity = 1;
 
-                // 2. РЇРєС‰Рѕ РІС–РєРЅРѕ Р±СѓР»Рѕ РЅР° РІРµСЃСЊ РµРєСЂР°РЅ РґРѕ Р·РіРѕСЂС‚Р°РЅРЅСЏ вЂ” РїРѕРІРµСЂС‚Р°С”РјРѕ Р№РѕРіРѕ РЅР° РІРµСЃСЊ РµРєСЂР°РЅ!
+                // 2. Якщо вікно було на весь екран до згортання — повертаємо його на весь екран!
                 if (this.WindowState == WindowState.Normal && _previousState == WindowState.Maximized)
                 {
                     this.WindowState = WindowState.Maximized;
-                    _previousState = WindowState.Normal; // РћС‡РёС‰Р°С”РјРѕ РїР°Рј'СЏС‚СЊ
+                    _previousState = WindowState.Normal; // Очищаємо пам'ять
                 }
             }
         }
 
-        // РџР»Р°РІРЅРµ СЂРѕР·РіРѕСЂС‚Р°РЅРЅСЏ РЅР° РІРµСЃСЊ РµРєСЂР°РЅ / Сѓ РІС–РєРЅРѕ
+        // Плавне розгортання на весь екран / у вікно
         private void ToggleMaximize()
         {
             var fadeOut = new DoubleAnimation(1, 0.5, TimeSpan.FromMilliseconds(80));
@@ -288,12 +288,12 @@ namespace NovaGames.UI
                 if (this.WindowState == WindowState.Normal)
                 {
                     this.WindowState = WindowState.Maximized;
-                    btnMaximize.Content = "вќђ";
+                    btnMaximize.Content = "?";
                 }
                 else
                 {
                     this.WindowState = WindowState.Normal;
-                    btnMaximize.Content = "вђ";
+                    btnMaximize.Content = "?";
                 }
 
                 var fadeIn = new DoubleAnimation(0.5, 1, TimeSpan.FromMilliseconds(150));
@@ -305,45 +305,45 @@ namespace NovaGames.UI
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
             this.Hide();
-            MyNotifyIcon.ShowBalloonTip("Nova Games", "Р”РѕРґР°С‚РѕРє РїСЂР°С†СЋС” Сѓ С„РѕРЅРѕРІРѕРјСѓ СЂРµР¶РёРјС–.", Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
+            MyNotifyIcon.ShowBalloonTip("Nova Games", "Додаток працює у фоновому режимі.", Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
         }
 
         private void BtnUserProfile_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Р’С–РґРєСЂРёРІР°С”РјРѕ СЃС‚РѕСЂС–РЅРєСѓ РїСЂРѕС„С–Р»СЋ
+            // 1. Відкриваємо сторінку профілю
             if (_profileView == null) { _profileView = new ProfileView(); }
             MainContent.Content = _profileView;
 
-            // 2. РџСЂРёРјСѓСЃРѕРІРѕ Р·РЅС–РјР°С”РјРѕ РІРёРґС–Р»РµРЅРЅСЏ Р· СѓСЃС–С… RadioButton
+            // 2. Примусово знімаємо виділення з усіх RadioButton
             btnNavStore.IsChecked = false;
             btnNavLibrary.IsChecked = false;
             btnNavAdmin.IsChecked = false;
 
-            // 3. РҐРѕРІР°С”РјРѕ СЃРёРЅС–Р№ С–РЅРґРёРєР°С‚РѕСЂ (С‰РѕР± РІС–РЅ РЅРµ РІРёСЃС–РІ РїС–Рґ РїСѓСЃС‚РѕСЋ РІРєР»Р°РґРєРѕСЋ)
-            // Р—РЅС–РјР°С”РјРѕ Р±Р»РѕРє РІС–Рґ СЃС‚Р°СЂРѕС— Р°РЅС–РјР°С†С–С—(СЏРєС‰Рѕ РІРѕРЅР° Р±СѓР»Р°)
+            // 3. Ховаємо синій індикатор (щоб він не висів під пустою вкладкою)
+            // Знімаємо блок від старої анімації(якщо вона була)
             SlidingIndicator.BeginAnimation(FrameworkElement.WidthProperty, null);
 
-            // Р РѕР±РёРјРѕ РїР»Р°РІРЅСѓ Р°РЅС–РјР°С†С–СЋ Р·РЅРёРєРЅРµРЅРЅСЏ Р»С–РЅС–С— (РІРѕРЅР° СЃС‚СЏРіРЅРµС‚СЊСЃСЏ РІ 0 Р·Р° 150 РјС–Р»С–СЃРµРєСѓРЅРґ)
+            // Робимо плавну анімацію зникнення лінії (вона стягнеться в 0 за 150 мілісекунд)
             var hideAnim = new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromMilliseconds(150));
             SlidingIndicator.BeginAnimation(FrameworkElement.WidthProperty, hideAnim);
         }
 
-        // --- Р›РћР“Р†РљРђ РўР Р•Р® ---
+        // --- ЛОГІКА ТРЕЮ ---
 
         private void Tray_Restore_Click(object sender, RoutedEventArgs e)
         {
             this.Show();
             this.WindowState = WindowState.Normal;
-            this.Activate(); // Р РѕР±РёС‚СЊ РІС–РєРЅРѕ Р°РєС‚РёРІРЅРёРј (РїРѕРІРµСЂС… С–РЅС€РёС…)
+            this.Activate(); // Робить вікно активним (поверх інших)
         }
 
         private void Tray_Exit_Click(object sender, RoutedEventArgs e)
         {
-            // РџРѕРІРЅРµ Р·Р°РєСЂРёС‚С‚СЏ
+            // Повне закриття
             Application.Current.Shutdown();
         }
 
-        // РњРµС‚РѕРґ РґР»СЏ РїР»Р°РІРЅРѕС— Р°РЅС–РјР°С†С–С— Р»С–РЅС–С— РІ РЅР°РІС–РіР°С†С–С—
+        // Метод для плавної анімації лінії в навігації
         private void MoveIndicatorTo(UIElement target)
         {
             if (target == null || !target.IsVisible || !IsLoaded) return;
@@ -352,15 +352,15 @@ namespace NovaGames.UI
 
             Point relativeLocation = target.TranslatePoint(new Point(0, 0), NavButtonsGrid);
 
-            // РђРЅС–РјР°С†С–СЏ СЂСѓС…Сѓ РїРѕ РѕСЃС– X
+            // Анімація руху по осі X
             DoubleAnimation moveAnimation = new DoubleAnimation()
             {
                 To = relativeLocation.X,
                 Duration = TimeSpan.FromMilliseconds(300),
-                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut } // РџР»Р°РІРЅРµ СЃРїРѕРІС–Р»СЊРЅРµРЅРЅСЏ РІ РєС–РЅС†С–
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut } // Плавне сповільнення в кінці
             };
 
-            // РђРЅС–РјР°С†С–СЏ Р·РјС–РЅРё С€РёСЂРёРЅРё
+            // Анімація зміни ширини
             DoubleAnimation resizeAnimation = new DoubleAnimation()
             {
                 To = targetWidth,
@@ -372,15 +372,15 @@ namespace NovaGames.UI
             SlidingIndicator.BeginAnimation(FrameworkElement.WidthProperty, resizeAnimation);
         }
 
-        // РћР±СЂРѕР±РЅРёРє РґР»СЏ РІСЃС–С… РєРЅРѕРїРѕРє РЅР°РІС–РіР°С†С–С— (Р„Р”РРќРР™)
+        // Обробник для всіх кнопок навігації (ЄДИНИЙ)
         private void NavMenu_Checked(object sender, RoutedEventArgs e)
         {
             if (sender is RadioButton btn)
             {
-                // Р—Р°РїСѓСЃРєР°С”РјРѕ Р°РЅС–РјР°С†С–СЋ СЃРёРЅСЊРѕС— Р»С–РЅС–С—
+                // Запускаємо анімацію синьої лінії
                 MoveIndicatorTo(btn);
 
-                // Р’С–РґРєСЂРёРІР°С”РјРѕ РІС–РґРїРѕРІС–РґРЅСѓ СЃС‚РѕСЂС–РЅРєСѓ
+                // Відкриваємо відповідну сторінку
                 if (btn.Name == "btnNavStore")
                 {
                     if (_storeView == null) _storeView = new StoreView();
@@ -413,21 +413,21 @@ namespace NovaGames.UI
                 _gameDetailsView = new GameDetailsView();
             }
 
-            // Р’РёРєР»РёРєР°С”РјРѕ Р°СЃРёРЅС…СЂРѕРЅРЅРёР№ Р·Р°РїРёС‚ РґРѕ API Р·Р° СЃРІС–Р¶РёРјРё РґР°РЅРёРјРё
+            // Викликаємо асинхронний запит до API за свіжими даними
             _ = _gameDetailsView.LoadGameDataAsync(selectedGame.Id);
 
             MainContent.Content = _gameDetailsView;
         }
 
-        // РћР±СЂРѕР±РЅРёРє РєР»С–РєСѓ РїРѕ РєРѕС€РёРєСѓ
+        // Обробник кліку по кошику
         private void BtnCart_Click(object sender, RoutedEventArgs e)
         {
-            // Р—РЅС–РјР°С”РјРѕ РІРёРґС–Р»РµРЅРЅСЏ Р· СѓСЃС–С… СЂР°РґС–Рѕ-РєРЅРѕРїРѕРє РјРµРЅСЋ
+            // Знімаємо виділення з усіх радіо-кнопок меню
             btnNavStore.IsChecked = false;
             btnNavLibrary.IsChecked = false;
             btnNavAdmin.IsChecked = false;
 
-            // РҐРѕРІР°С”РјРѕ Р»С–РЅС–СЋ РїС–РґРєСЂРµСЃР»РµРЅРЅСЏ РјРµРЅСЋ
+            // Ховаємо лінію підкреслення меню
             SlidingIndicator.BeginAnimation(FrameworkElement.WidthProperty, null);
             SlidingIndicator.Width = 0;
 
@@ -440,15 +440,15 @@ namespace NovaGames.UI
             MainContent.Content = _cartView;
         }
 
-        // Р¦РµР№ РјРµС‚РѕРґ РјРѕР¶СѓС‚СЊ РІРёРєР»РёРєР°С‚Рё С–РЅС€С– РІС–РєРЅР°, С‰РѕР± РїСЂРёРјСѓСЃРѕРІРѕ РІС–РґРєСЂРёС‚Рё РєРѕС€РёРє
+        // Цей метод можуть викликати інші вікна, щоб примусово відкрити кошик
         public void NavigateToCart()
         {
-            // Р—РЅС–РјР°С”РјРѕ РІРёРґС–Р»РµРЅРЅСЏ Р· СѓСЃС–С… СЂР°РґС–Рѕ-РєРЅРѕРїРѕРє РіРѕР»РѕРІРЅРѕРіРѕ РјРµРЅСЋ
+            // Знімаємо виділення з усіх радіо-кнопок головного меню
             btnNavStore.IsChecked = false;
             btnNavLibrary.IsChecked = false;
             btnNavAdmin.IsChecked = false;
 
-            // РҐРѕРІР°С”РјРѕ Р»С–РЅС–СЋ РїС–РґРєСЂРµСЃР»РµРЅРЅСЏ РјРµРЅСЋ
+            // Ховаємо лінію підкреслення меню
             SlidingIndicator.BeginAnimation(FrameworkElement.WidthProperty, null);
             SlidingIndicator.Width = 0;
 
@@ -461,15 +461,15 @@ namespace NovaGames.UI
             MainContent.Content = _cartView;
         }
 
-        // РњРµС‚РѕРґ РґР»СЏ РїСЂРёРјСѓСЃРѕРІРѕРіРѕ РїРѕРІРµСЂРЅРµРЅРЅСЏ РІ РјР°РіР°Р·РёРЅ (РЅР°РїСЂРёРєР»Р°Рґ, Р· РїРѕСЂРѕР¶РЅСЊРѕРіРѕ РєРѕС€РёРєР°)
+        // Метод для примусового повернення в магазин (наприклад, з порожнього кошика)
         public void NavigateToStore()
         {
-            // Р РѕР±РёРјРѕ РєРЅРѕРїРєСѓ РјР°РіР°Р·РёРЅСѓ РІ С…РµРґРµСЂС– Р°РєС‚РёРІРЅРѕСЋ
+            // Робимо кнопку магазину в хедері активною
             btnNavStore.IsChecked = true;
 
-            // РџРѕРІРµСЂС‚Р°С”РјРѕ Р»С–РЅС–СЋ РїС–РґРєСЂРµСЃР»РµРЅРЅСЏ (SlidingIndicator) РґРѕ РєРЅРѕРїРєРё РјР°РіР°Р·РёРЅСѓ
-            // РЇРєС‰Рѕ РІ С‚РµР±Рµ С” РјРµС‚РѕРґ MoveIndicatorTo, РјРѕР¶РµС€ РІРёРєРѕСЂРёСЃС‚Р°С‚Рё Р№РѕРіРѕ, 
-            // Р°Р±Рѕ РїСЂРѕСЃС‚Рѕ СЃРєРёРЅСѓС‚Рё Р°РЅС–РјР°С†С–СЋ (СЏРє РјРё СЂРѕР±РёР»Рё РІ С–РЅС€РёС… РјС–СЃС†СЏС…)
+            // Повертаємо лінію підкреслення (SlidingIndicator) до кнопки магазину
+            // Якщо в тебе є метод MoveIndicatorTo, можеш використати його, 
+            // або просто скинути анімацію (як ми робили в інших місцях)
 
             if (_storeView == null)
             {
@@ -479,31 +479,31 @@ namespace NovaGames.UI
             MainContent.Content = _storeView;
         }
 
-        // Р“Р»РѕР±Р°Р»СЊРЅРµ РїРµСЂРµС…РѕРїР»РµРЅРЅСЏ РІСЃС–С… РєР»С–РєС–РІ Сѓ РІС–РєРЅС–
+        // Глобальне перехоплення всіх кліків у вікні
         private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            // РџРµСЂРµРІС–СЂСЏС”РјРѕ: СЏРєС‰Рѕ РџРѕРїР°Рї Р’Р†Р”РљР РРўРР™, Р°Р»Рµ РјРё РєР»С–РєР°С”РјРѕ РќР• РїРѕ РїРѕР»СЋ РїРѕС€СѓРєСѓ С– РќР• РїРѕ СЃР°РјРѕРјСѓ РїРѕРїР°РїСѓ
+            // Перевіряємо: якщо Попап ВІДКРИТИЙ, але ми клікаємо НЕ по полю пошуку і НЕ по самому попапу
             if (SearchPopup.IsOpen && !SearchBorder.IsMouseOver && !SearchPopup.IsMouseOver)
             {
-                // РџСЂРёРјСѓСЃРѕРІРѕ Р№РѕРіРѕ Р·Р°РєСЂРёРІР°С”РјРѕ
+                // Примусово його закриваємо
                 SearchPopup.IsOpen = false;
             }
         }
 
-        // 1. Р’Р†Р”РљР РРўРўРЇ Р’Р†РљРќРђ (РўРІС–Р№ РєР»С–Рє РїРѕ РїР»СЋСЃРёРєСѓ РІ С…С–РґРµСЂС– - РїРµСЂРµРєРѕРЅР°Р№СЃСЏ, С‰Рѕ РјРµС‚РѕРґ РїСЂРёРІ'СЏР·Р°РЅРёР№ РґРѕ РєРЅРѕРїРєРё)
+        // 1. ВІДКРИТТЯ ВІКНА (Твій клік по плюсику в хідері - переконайся, що метод прив'язаний до кнопки)
         private async void BtnAddFunds_Click(object sender, RoutedEventArgs e)
         {
             OverlayWallet.Visibility = Visibility.Visible;
 
             try
             {
-                // Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ Р·Р±РµСЂРµР¶РµРЅС– РєР°СЂС‚РєРё
+                // Завантажуємо збережені картки
                 var savedCards = await _userService.GetSavedCardsAsync();
                 if (savedCards.Any())
                 {
                     PanelSavedCards.Visibility = Visibility.Visible;
                     comboSavedCards.ItemsSource = savedCards;
-                    // РџРѕРєР°Р·СѓС”РјРѕ РјР°СЃРєСѓ РІ СЃРїРёСЃРєСѓ, РЅР°РїСЂРёРєР»Р°Рґ "**** **** **** 1234 (12/26)"
+                    // Показуємо маску в списку, наприклад "**** **** **** 1234 (12/26)"
                     comboSavedCards.DisplayMemberPath = "MaskedCardNumber";
                 }
                 else
@@ -513,38 +513,38 @@ namespace NovaGames.UI
             }
             catch (Exception ex)
             {
-                _ = _logger?.LogAsync($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ Р·Р±РµСЂРµР¶РµРЅРёС… РєР°СЂС‚РѕРє: {ex.Message}", LogType.ERROR);
-                // РџСЂРѕРґРѕРІР¶СѓС”РјРѕ СЂРѕР±РѕС‚Сѓ, РїСЂРѕСЃС‚Рѕ Р±РµР· Р·Р±РµСЂРµР¶РµРЅРёС… РєР°СЂС‚РѕРє
+                _ = _logger?.LogAsync($"Помилка завантаження збережених карток: {ex.Message}", LogType.ERROR);
+                // Продовжуємо роботу, просто без збережених карток
                 PanelSavedCards.Visibility = Visibility.Collapsed;
             }
         }
 
-        // 2. Р—РђРљР РРўРўРЇ Р’Р†РљРќРђ
+        // 2. ЗАКРИТТЯ ВІКНА
         private void OverlayWallet_Close_Click(object sender, RoutedEventArgs e)
         {
             OverlayWallet.Visibility = Visibility.Collapsed;
 
-            // РЎРєРёРґР°С”РјРѕ СЃС‚Р°РЅ РЅР° РљСЂРѕРє 1 РїСЂРё Р·Р°РєСЂРёС‚С‚С–
+            // Скидаємо стан на Крок 1 при закритті
             PanelStep1_Amount.Visibility = Visibility.Visible;
             PanelStep2_Payment.Visibility = Visibility.Collapsed;
             _pendingReplenishAmount = 0;
 
-            // 2. РћР§РР©РђР„РњРћ Р’РЎР† РџРћР›РЇ
+            // 2. ОЧИЩАЄМО ВСІ ПОЛЯ
             txtCardNumber.Text = string.Empty;
             txtCardExpiry.Text = string.Empty;
             txtCardCvv.Text = string.Empty;
 
-            // 3. Р РѕР·Р±Р»РѕРєРѕРІСѓС”РјРѕ РїРѕР»СЏ (СЏРєС‰Рѕ РІРѕРЅРё Р±СѓР»Рё Р·Р°Р±Р»РѕРєРѕРІР°РЅС– РІРёР±РѕСЂРѕРј Р·Р±РµСЂРµР¶РµРЅРѕС— РєР°СЂС‚РєРё)
+            // 3. Розблоковуємо поля (якщо вони були заблоковані вибором збереженої картки)
             txtCardNumber.IsEnabled = true;
             txtCardExpiry.IsEnabled = true;
 
-            // 4. РЎРєРёРґР°С”РјРѕ РєРѕРјР±РѕР±РѕРєСЃ С‚Р° РіР°Р»РѕС‡РєСѓ
+            // 4. Скидаємо комбобокс та галочку
             comboSavedCards.SelectedItem = null;
             chkSaveCard.IsChecked = false;
             chkSaveCard.IsEnabled = true;
         }
 
-        // 3. РљРќРћРџРљР РЁР’РР”РљРћР‡ РЎРЈРњР (100, 500, 1000)
+        // 3. КНОПКИ ШВИДКОЇ СУМИ (100, 500, 1000)
         private void BtnQuickAmount_Click(object sender, RoutedEventArgs e)
         {
             if (sender is System.Windows.Controls.Button btn && btn.Tag != null)
@@ -553,31 +553,31 @@ namespace NovaGames.UI
             }
         }
 
-        // 4. Р—РђРҐРРЎРў Р’Р†Р” Р’Р’Р•Р”Р•РќРќРЇ Р‘РЈРљР’ (С‚С–Р»СЊРєРё С†РёС„СЂРё)
+        // 4. ЗАХИСТ ВІД ВВЕДЕННЯ БУКВ (тільки цифри)
         private void TxtAmount_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
         {
             Regex regex = new Regex("[^0-9]+");
             e.Handled = regex.IsMatch(e.Text);
         }
 
-        // 5. РљР›Р†Рљ "РџР•Р Р•Р™РўР Р”Рћ РћРџР›РђРўР"
-        // РљР РћРљ 1: РќР°С‚РёСЃРЅСѓР»Рё "Р”РђР›Р†"
+        // 5. КЛІК "ПЕРЕЙТИ ДО ОПЛАТИ"
+        // КРОК 1: Натиснули "ДАЛІ"
         private void BtnConfirmReplenish_Click(object sender, RoutedEventArgs e)
         {
             if (decimal.TryParse(txtReplenishAmount.Text, out decimal amount) && amount > 0)
             {
                 _pendingReplenishAmount = amount;
 
-                // РџРµСЂРµРјРёРєР°С”РјРѕ РІС–Р·СѓР°Р» РЅР° РґР°РЅС– РєР°СЂС‚РєРё
+                // Перемикаємо візуал на дані картки
                 PanelStep1_Amount.Visibility = Visibility.Collapsed;
                 PanelStep2_Payment.Visibility = Visibility.Visible;
 
-                // РџРёС€РµРјРѕ С‚РѕС‡РЅСѓ СЃСѓРјСѓ РЅР° С„С–РЅР°Р»СЊРЅС–Р№ РєРЅРѕРїС†С–
-                btnProcessPayment.Content = $"РћРџР›РђРўРРўР {_pendingReplenishAmount:N2} в‚ґ";
+                // Пишемо точну суму на фінальній кнопці
+                btnProcessPayment.Content = $"ОПЛАТИТИ {_pendingReplenishAmount:N2} ?";
             }
             else
             {
-                var dialog = new ConfirmWindow("РџРћРњРР›РљРђ", "Р‘СѓРґСЊ Р»Р°СЃРєР°, РІРІРµРґС–С‚СЊ РєРѕСЂРµРєС‚РЅСѓ СЃСѓРјСѓ.", "Р—Р РћР—РЈРњР†Р›Рћ")
+                var dialog = new ConfirmWindow("ПОМИЛКА", "Будь ласка, введіть коректну суму.", "ЗРОЗУМІЛО")
                 {
                     Owner = Window.GetWindow(this)
                 };
@@ -585,24 +585,24 @@ namespace NovaGames.UI
             }
         }
 
-        // РљР РћРљ 2: РќР°С‚РёСЃРЅСѓР»Рё "РќРђР—РђР”"
+        // КРОК 2: Натиснули "НАЗАД"
         private void BtnBackToAmount_Click(object sender, RoutedEventArgs e)
         {
             PanelStep2_Payment.Visibility = Visibility.Collapsed;
             PanelStep1_Amount.Visibility = Visibility.Visible;
         }
 
-        // РљР РћРљ 2: Р¤Р†РќРђР›Р¬РќРђ РћРџР›РђРўРђ
+        // КРОК 2: ФІНАЛЬНА ОПЛАТА
         private async void BtnProcessPayment_Click(object sender, RoutedEventArgs e)
         {
             if (txtCardNumber.Text.Length < 16 || txtCardCvv.Text.Length < 3)
             {
                 var errorDialog = new ConfirmWindow(
-                    header: "РџРћРњРР›РљРђ Р’Р’Р•Р”Р•РќРќРЇ",
-                    message: "Р‘СѓРґСЊ Р»Р°СЃРєР°, РїРµСЂРµРІС–СЂС‚Рµ РїСЂР°РІРёР»СЊРЅС–СЃС‚СЊ РІРІРµРґРµРЅРёС… РґР°РЅРёС….",
-                    confirmBtnText: "Р—Р РћР—РЈРњР†Р›Рћ",
+                    header: "ПОМИЛКА ВВЕДЕННЯ",
+                    message: "Будь ласка, перевірте правильність введених даних.",
+                    confirmBtnText: "ЗРОЗУМІЛО",
                     warningText: "",
-                    showCancelButton: false // РҐРѕРІР°С”РјРѕ СЃРєР°СЃСѓРІР°РЅРЅСЏ
+                    showCancelButton: false // Ховаємо скасування
                 )
                 {
                     Owner = Window.GetWindow(this)
@@ -611,8 +611,8 @@ namespace NovaGames.UI
                 return;
             }
 
-            // РџРѕРєР°Р·СѓС”РјРѕ СЃС‚Р°РЅ Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ (РјРѕР¶РЅР° РїСЂРѕСЃС‚Рѕ Р·РјС–РЅРёС‚Рё С‚РµРєСЃС‚ РЅР° РєРЅРѕРїС†С–)
-            btnProcessPayment.Content = "РћР‘Р РћР‘РљРђ...";
+            // Показуємо стан завантаження (можна просто змінити текст на кнопці)
+            btnProcessPayment.Content = "ОБРОБКА...";
             btnProcessPayment.IsEnabled = false;
 
             try
@@ -620,47 +620,47 @@ namespace NovaGames.UI
                 var request = new TopUpRequest
                 {
                     Amount = _pendingReplenishAmount,
-                    CardNumber = txtCardNumber.Text.Replace(" ", ""), // РџСЂРёР±РёСЂР°С”РјРѕ РїСЂРѕР±С–Р»Рё, СЏРєС‰Рѕ С”
+                    CardNumber = txtCardNumber.Text.Replace(" ", ""), // Прибираємо пробіли, якщо є
                     ExpiryDate = txtCardExpiry.Text,
                     Cvv = txtCardCvv.Text,
                     SaveCard = chkSaveCard.IsChecked ?? false
                 };
 
-                // Р’РРљР›РРљРђР„РњРћ РќРђРЁ РќРћР’РР™ API-РњР•РўРћР”
+                // ВИКЛИКАЄМО НАШ НОВИЙ API-МЕТОД
                 decimal newBalance = await _userService.TopUpWalletAsync(request);
-                _ = _logger?.LogAsync($"РљРѕСЂРёСЃС‚СѓРІР°С‡ СѓСЃРїС–С€РЅРѕ РїРѕРїРѕРІРЅРёРІ РіР°РјР°РЅРµС†СЊ РЅР° {_pendingReplenishAmount:N2} в‚ґ", LogType.INFO);
+                _ = _logger?.LogAsync($"Користувач успішно поповнив гаманець на {_pendingReplenishAmount:N2} ?", LogType.INFO);
 
-                // РћРЅРѕРІР»СЋС”РјРѕ Р±Р°Р»Р°РЅСЃ РІ Р»РѕРєР°Р»СЊРЅС–Р№ СЃРµСЃС–С— С‚Р° РІ С–РЅС‚РµСЂС„РµР№СЃС– (РҐС–РґРµСЂС–)
+                // Оновлюємо баланс в локальній сесії та в інтерфейсі (Хідері)
                 _userSession.CurrentUser!.WalletBalance = newBalance;
 
-                txtBalance.Text = $"{newBalance:N2} в‚ґ";
+                txtBalance.Text = $"{newBalance:N2} ?";
 
                 var successDialog = new ConfirmWindow(
-                    header: "РЈРЎРџР†РЁРќРђ РћРџР›РђРўРђ",
-                    message: $"РўСЂР°РЅР·Р°РєС†С–СЏ СѓСЃРїС–С€РЅР°!\nР’Р°С€ РЅРѕРІРёР№ Р±Р°Р»Р°РЅСЃ: {newBalance:N2} в‚ґ",
-                    confirmBtnText: "Р§РЈР”РћР’Рћ",
+                    header: "УСПІШНА ОПЛАТА",
+                    message: $"Транзакція успішна!\nВаш новий баланс: {newBalance:N2} ?",
+                    confirmBtnText: "ЧУДОВО",
                     warningText: "",
-                    showCancelButton: false,               // РћРґРЅР° РєРЅРѕРїРєР°
-                    headerColorHex: "#00ADEF",             // РЎРёРЅС–Р№ Р·Р°РіРѕР»РѕРІРѕРє
-                    confirmBtnStyle: "ModernButtonStyle"   // РўРІРѕСЏ СЃРёРЅСЏ РєРЅРѕРїРєР° Р· App.xaml
+                    showCancelButton: false,               // Одна кнопка
+                    headerColorHex: "#00ADEF",             // Синій заголовок
+                    confirmBtnStyle: "ModernButtonStyle"   // Твоя синя кнопка з App.xaml
                 )
                 {
                     Owner = Window.GetWindow(this)
                 };
                 successDialog.ShowDialog();
 
-                OverlayWallet_Close_Click(null, null); // Р—Р°РєСЂРёРІР°С”РјРѕ РјРѕРґР°Р»РєСѓ
+                OverlayWallet_Close_Click(null, null); // Закриваємо модалку
             }
             catch (Exception ex)
             {
-                _ = _logger?.LogAsync($"Р—Р±С–Р№ РїС–Рґ С‡Р°СЃ РїРѕРїРѕРІРЅРµРЅРЅСЏ РіР°РјР°РЅС†СЏ: {ex.Message}", LogType.ERROR);
+                _ = _logger?.LogAsync($"Збій під час поповнення гаманця: {ex.Message}", LogType.ERROR);
 
                 var errorDialog = new ConfirmWindow(
-                    header: "РџРћРњРР›РљРђ РўР РђРќР—РђРљР¦Р†Р‡",
+                    header: "ПОМИЛКА ТРАНЗАКЦІЇ",
                     message: "",
-                    confirmBtnText: "Р—Р РћР—РЈРњР†Р›Рћ",
+                    confirmBtnText: "ЗРОЗУМІЛО",
                     warningText: "",
-                    showCancelButton: false // РҐРѕРІР°С”РјРѕ СЃРєР°СЃСѓРІР°РЅРЅСЏ
+                    showCancelButton: false // Ховаємо скасування
                 )
                 {
                     Owner = Window.GetWindow(this)
@@ -669,54 +669,54 @@ namespace NovaGames.UI
             }
             finally
             {
-                // РџРѕРІРµСЂС‚Р°С”РјРѕ РєРЅРѕРїРєСѓ РІ РЅРѕСЂРјР°Р»СЊРЅРёР№ СЃС‚Р°РЅ
-                btnProcessPayment.Content = "РћРџР›РђРўРРўР";
+                // Повертаємо кнопку в нормальний стан
+                btnProcessPayment.Content = "ОПЛАТИТИ";
                 btnProcessPayment.IsEnabled = true;
             }
         }
 
-        // 6. Р’РР‘Р†Р  Р—Р‘Р•Р Р•Р–Р•РќРћР‡ РљРђР РўРљР
+        // 6. ВИБІР ЗБЕРЕЖЕНОЇ КАРТКИ
         private void ComboSavedCards_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (comboSavedCards.SelectedItem is SavedCardDto selectedCard)
             {
-                // РџС–РґСЃС‚Р°РІР»СЏС”РјРѕ РјР°СЃРєСѓ С– РґР°С‚Сѓ
+                // Підставляємо маску і дату
                 txtCardNumber.Text = selectedCard.MaskedCardNumber;
                 txtCardExpiry.Text = selectedCard.ExpiryDate;
                 txtCardNumber.IsEnabled = false;
                 txtCardExpiry.IsEnabled = false;
 
-                // Р—РЅС–РјР°С”РјРѕ РіР°Р»РѕС‡РєСѓ Р·Р±РµСЂРµР¶РµРЅРЅСЏ, Р±Рѕ С†СЏ РєР°СЂС‚РєР° РІР¶Рµ Р·Р±РµСЂРµР¶РµРЅР°
+                // Знімаємо галочку збереження, бо ця картка вже збережена
                 chkSaveCard.IsChecked = false;
                 chkSaveCard.IsEnabled = false;
 
-                // Р¤РѕРєСѓСЃ РЅР° CVV, Р±Рѕ Р№РѕРіРѕ С‚СЂРµР±Р° РІРІРѕРґРёС‚Рё Р·Р°РІР¶РґРё
+                // Фокус на CVV, бо його треба вводити завжди
                 txtCardCvv.Focus();
             }
         }
 
-        // РђРІС‚РѕРјР°С‚РёС‡РЅРµ С„РѕСЂРјР°С‚СѓРІР°РЅРЅСЏ РґР°С‚Рё РІ MM/YY
+        // Автоматичне форматування дати в MM/YY
         private void TxtCardExpiry_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (sender is System.Windows.Controls.TextBox textBox)
             {
-                // 1. РўРёРјС‡Р°СЃРѕРІРѕ РІС–РґРїРёСЃСѓС”РјРѕСЃСЊ РІС–Рґ РїРѕРґС–С—, С‰РѕР± СѓРЅРёРєРЅСѓС‚Рё РЅРµСЃРєС–РЅС‡РµРЅРЅРѕРіРѕ С†РёРєР»Сѓ РїСЂРё Р·РјС–РЅС– С‚РµРєСЃС‚Сѓ
+                // 1. Тимчасово відписуємось від події, щоб уникнути нескінченного циклу при зміні тексту
                 textBox.TextChanged -= TxtCardExpiry_TextChanged;
 
-                // 2. Р’РёРґР°Р»СЏС”РјРѕ РІСЃС– С–СЃРЅСѓСЋС‡С– СЃР»РµС€С–, С‰РѕР± Р·Р°Р»РёС€РёР»РёСЃСЊ РўР†Р›Р¬РљР С†РёС„СЂРё
+                // 2. Видаляємо всі існуючі слеші, щоб залишились ТІЛЬКИ цифри
                 string cleanText = textBox.Text.Replace("/", "");
 
-                // 3. РЇРєС‰Рѕ С†РёС„СЂ Р±С–Р»СЊС€Рµ РґРІРѕС…, СЃС‚Р°РІРёРјРѕ РјС–Р¶ РЅРёРјРё СЃР»РµС€
+                // 3. Якщо цифр більше двох, ставимо між ними слеш
                 if (cleanText.Length > 2)
                 {
                     cleanText = cleanText.Insert(2, "/");
                 }
 
-                // 4. РћРЅРѕРІР»СЋС”РјРѕ С‚РµРєСЃС‚ С– СЃС‚Р°РІРёРјРѕ РєСѓСЂСЃРѕСЂ Сѓ СЃР°РјРёР№ РєС–РЅРµС†СЊ
+                // 4. Оновлюємо текст і ставимо курсор у самий кінець
                 textBox.Text = cleanText;
                 textBox.CaretIndex = textBox.Text.Length;
 
-                // 5. РџС–РґРїРёСЃСѓС”РјРѕСЃСЊ РЅР°Р·Р°Рґ
+                // 5. Підписуємось назад
                 textBox.TextChanged += TxtCardExpiry_TextChanged;
             }
         }
@@ -741,7 +741,7 @@ namespace NovaGames.UI
             }
         }
 
-        // РџСѓР±Р»С–С‡РЅРёР№ РјРµС‚РѕРґ РґР»СЏ РѕРЅРѕРІР»РµРЅРЅСЏ Р±Р°Р»Р°РЅСЃСѓ Р· С–РЅС€РёС… СЃС‚РѕСЂС–РЅРѕРє
+        // Публічний метод для оновлення балансу з інших сторінок
         public void UpdateWalletBalance(decimal newBalance)
         {
             if (_userSession.CurrentUser != null)
@@ -749,10 +749,10 @@ namespace NovaGames.UI
                 _userSession.CurrentUser.WalletBalance = newBalance;
             }
 
-            // РћР±РѕРІ'СЏР·РєРѕРІРѕ С‡РµСЂРµР· Dispatcher, С‰РѕР± UI РѕРЅРѕРІРёРІСЃСЏ Р±РµР· РєРѕРЅС„Р»С–РєС‚С–РІ РїРѕС‚РѕРєС–РІ
+            // Обов'язково через Dispatcher, щоб UI оновився без конфліктів потоків
             Application.Current.Dispatcher.Invoke(() =>
             {
-                txtBalance.Text = $"{newBalance:N2} в‚ґ";
+                txtBalance.Text = $"{newBalance:N2} ?";
             });
         }
     }

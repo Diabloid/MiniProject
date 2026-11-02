@@ -14,7 +14,7 @@ public class UserRepository : BaseRepository<User>, IUserRepository
         return await _dbSet
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.Email == email);
+            .FirstOrDefaultAsync(u => u.Email == email || u.DisplayName == email);
     }
 
     public async Task<bool> ExistsByEmailAsync(string email)
@@ -47,31 +47,6 @@ public class UserRepository : BaseRepository<User>, IUserRepository
 
     public async Task<Role?> GetRoleByNameAsync(string roleName)
     {
-        return await _context.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == roleName.ToLower());
-    }
-
-    public async Task<List<Role>> GetRolesByNamesAsync(IEnumerable<string> roleNames)
-    {
-        var lowerNames = roleNames.Select(r => r.ToLower()).ToList();
-        return await _context.Roles
-            .Where(r => lowerNames.Contains(r.Name.ToLower()))
-            .ToListAsync();
-    }
-
-    public async Task UpdateRolesAsync(User user, IEnumerable<Role> newRoles)
-    {
-        var existingUserRoles = _context.UserRoles.Where(ur => ur.UserId == user.Id);
-        _context.UserRoles.RemoveRange(existingUserRoles);
-
-        foreach (var role in newRoles)
-        {
-            _context.UserRoles.Add(new UserRole
-            {
-                UserId = user.Id,
-                RoleId = role.Id
-            });
-        }
-
-        await _context.SaveChangesAsync();
+        return await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
     }
 }

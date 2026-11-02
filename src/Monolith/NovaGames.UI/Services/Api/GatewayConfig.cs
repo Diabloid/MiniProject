@@ -1,0 +1,8 @@
+namespace NovaGames.UI.Services.Api;
+
+public class GatewayConfig
+{
+    public const string DefaultBaseUrl = "http://localhost:5000";
+
+    public string BaseUrl { get; set; } = DefaultBaseUrl;
+}

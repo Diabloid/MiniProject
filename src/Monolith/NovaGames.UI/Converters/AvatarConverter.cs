@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Windows.Data;
@@ -19,7 +19,7 @@ namespace NovaGames.UI.Converters
 
                 if (url.StartsWith("/images/"))
                 {
-                    bitmap.UriSource = new Uri($"https://localhost:7232{url}", UriKind.Absolute);
+                    bitmap.UriSource = new Uri($"http://localhost:5000{url}", UriKind.Absolute);
                     bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
                 }
                 else

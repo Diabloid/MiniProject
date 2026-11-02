@@ -1,4 +1,4 @@
-п»їusing Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using NovaGames.Core.Entities;
 using NovaGames.Core.Services;
 using System;
@@ -13,15 +13,15 @@ namespace NovaGames.UI.Services
     public class UserApiService
     {
         private readonly HttpClient _httpClient;
-        private const string BaseUrl = "https://localhost:7232/api/v1/users";
-        private const string WalletUrl = "https://localhost:7232/api/wallet";
+        private const string BaseUrl = "http://localhost:5000/api/v1/users";
+        private const string WalletUrl = "http://localhost:5000/api/wallet";
 
         public UserApiService()
         {
             _httpClient = new HttpClient();
         }
 
-        // Р‘РђР—РћР’РР™ РњР•РўРћР” Р”Р›РЇ Р’РЎР†РҐ РђР’РўРћР РР—РћР’РђРќРРҐ Р—РђРџРРўР†Р’
+        // БАЗОВИЙ МЕТОД ДЛЯ ВСІХ АВТОРИЗОВАНИХ ЗАПИТІВ
         private async Task<HttpResponseMessage> ExecuteWithAuthAsync(Func<HttpRequestMessage> requestFactory)
         {
             var session = App.AppHost!.Services.GetRequiredService<UserSession>();
@@ -32,7 +32,7 @@ namespace NovaGames.UI.Services
 
             var response = await _httpClient.SendAsync(request);
 
-            // РџР•Р Р•РҐРћРџР›Р•РќРќРЇ 401 (РўРћРљР•Рќ РџР РћРўРЈРҐ)
+            // ПЕРЕХОПЛЕННЯ 401 (ТОКЕН ПРОТУХ)
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 var authService = App.AppHost!.Services.GetRequiredService<AuthApiService>();
@@ -44,21 +44,21 @@ namespace NovaGames.UI.Services
                 }
                 else
                 {
-                    throw new UnauthorizedAccessException("Р’Р°С€Р° СЃРµСЃС–СЏ Р·Р°РєС–РЅС‡РёР»Р°СЃСЏ. Р‘СѓРґСЊ Р»Р°СЃРєР°, СѓРІС–Р№РґС–С‚СЊ Р·РЅРѕРІСѓ.");
+                    throw new UnauthorizedAccessException("Ваша сесія закінчилася. Будь ласка, увійдіть знову.");
                 }
             }
 
-            // РџР•Р Р•РҐРћРџР›Р•РќРќРЇ 403 (РџР РђР’Рђ Р—РђР‘Р РђР›Р)
+            // ПЕРЕХОПЛЕННЯ 403 (ПРАВА ЗАБРАЛИ)
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
-                throw new UnauthorizedAccessException("Р’Р°С€С– РїСЂР°РІР° РґРѕСЃС‚СѓРїСѓ Р±СѓР»Рё Р·РјС–РЅРµРЅС–. Р”РѕСЃС‚СѓРї Р·Р°Р±РѕСЂРѕРЅРµРЅРѕ.");
+                throw new UnauthorizedAccessException("Ваші права доступу були змінені. Доступ заборонено.");
             }
 
             response.EnsureSuccessStatusCode();
             return response;
         }
 
-        // РџРЈР‘Р›Р†Р§РќР† РњР•РўРћР”Р
+        // ПУБЛІЧНІ МЕТОДИ
         public async Task<List<User>> GetAllUsersAsync()
         {
             try
@@ -68,7 +68,7 @@ namespace NovaGames.UI.Services
             }
             catch (HttpRequestException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° РїС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ API РєРѕСЂРёСЃС‚СѓРІР°С‡С–РІ: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка підключення до API користувачів: {ex.Message}");
                 return new List<User>();
             }
         }
@@ -88,12 +88,12 @@ namespace NovaGames.UI.Services
             await ExecuteWithAuthAsync(() => new HttpRequestMessage(HttpMethod.Post, $"{BaseUrl}/{userId}/block"));
         }
 
-        // 1. РџРµСЂРµРІС–СЂРєР° С‡Рё С–СЃРЅСѓС” С‚Р°РєР° РїРѕС€С‚Р° РІ Р±Р°Р·С–
+        // 1. Перевірка чи існує така пошта в базі
         public async Task<bool> CheckEmailExistsAsync(string email)
         {
             try
             {
-                // Р’РёРєР»РёРєР°С”РјРѕ GET /api/v1/users/check-email?email=test@test.com
+                // Викликаємо GET /api/v1/users/check-email?email=test@test.com
                 var response = await ExecuteWithAuthAsync(() =>
                     new HttpRequestMessage(HttpMethod.Get, $"{BaseUrl}/check-email?email={Uri.EscapeDataString(email)}"));
 
@@ -101,12 +101,12 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° РїРµСЂРµРІС–СЂРєРё РїРѕС€С‚Рё: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка перевірки пошти: {ex.Message}");
                 return false;
             }
         }
 
-        // 2. РћРЅРѕРІР»РµРЅРЅСЏ РїРѕС€С‚Рё РєРѕСЂРёСЃС‚СѓРІР°С‡Р°
+        // 2. Оновлення пошти користувача
         public async Task UpdateEmailAsync(int userId, string newEmail)
         {
             await ExecuteWithAuthAsync(() =>
@@ -117,7 +117,7 @@ namespace NovaGames.UI.Services
             });
         }
 
-        // Р’С–РґРїСЂР°РІРєР° РєРѕРґСѓ
+        // Відправка коду
         public async Task SendVerificationCodeAsync(int userId, string email)
         {
             await ExecuteWithAuthAsync(() =>
@@ -128,7 +128,7 @@ namespace NovaGames.UI.Services
             });
         }
 
-        // Р¤С–РЅР°Р»СЊРЅР° РїРµСЂРµРІС–СЂРєР° С– Р·Р±РµСЂРµР¶РµРЅРЅСЏ
+        // Фінальна перевірка і збереження
         public async Task UpdateEmailAsync(int userId, string newEmail, string code)
         {
             await ExecuteWithAuthAsync(() =>
@@ -139,14 +139,14 @@ namespace NovaGames.UI.Services
             });
         }
 
-        // Р—Р°РїРёС‚ РЅР° РІС–РґРїСЂР°РІРєСѓ РєРѕРґСѓ РґР»СЏ Р·РјС–РЅРё РїР°СЂРѕР»СЏ
+        // Запит на відправку коду для зміни пароля
         public async Task SendPasswordResetCodeAsync(int userId)
         {
             await ExecuteWithAuthAsync(() =>
                 new HttpRequestMessage(HttpMethod.Post, $"{BaseUrl}/{userId}/send-password-code"));
         }
 
-        // Р¤С–РЅР°Р»СЊРЅР° Р·РјС–РЅР° РїР°СЂРѕР»СЏ Р· РїРµСЂРµРІС–СЂРєРѕСЋ РєРѕРґСѓ
+        // Фінальна зміна пароля з перевіркою коду
         public async Task UpdatePasswordAsync(int userId, string newPassword, string code)
         {
             await ExecuteWithAuthAsync(() =>
@@ -157,7 +157,7 @@ namespace NovaGames.UI.Services
             });
         }
 
-        // РћРЅРѕРІР»РµРЅРЅСЏ РєРѕР»СЊРѕСЂСѓ СЂР°РјРєРё
+        // Оновлення кольору рамки
         public async Task UpdateAvatarColorAsync(int userId, string hexColor)
         {
             await ExecuteWithAuthAsync(() =>
@@ -168,7 +168,7 @@ namespace NovaGames.UI.Services
             });
         }
 
-        // Р—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С„Р°Р№Р»Сѓ Р°РІР°С‚Р°СЂРєРё
+        // Завантаження файлу аватарки
         public async Task<string> UploadAvatarFileAsync(int userId, string filePath)
         {
             var response = await ExecuteWithAuthAsync(() =>
@@ -178,7 +178,7 @@ namespace NovaGames.UI.Services
                 var content = new MultipartFormDataContent();
                 var fileContent = new ByteArrayContent(System.IO.File.ReadAllBytes(filePath));
 
-                // Р’РєР°Р·СѓС”РјРѕ С‚РёРї (image/png Р°Р±Рѕ image/jpeg)
+                // Вказуємо тип (image/png або image/jpeg)
                 string ext = Path.GetExtension(filePath).TrimStart('.');
                 fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue($"image/{ext}");
 
@@ -188,12 +188,12 @@ namespace NovaGames.UI.Services
                 return request;
             });
 
-            // РћС‚СЂРёРјСѓС”РјРѕ РЅРѕРІРµ РїРѕСЃРёР»Р°РЅРЅСЏ РІС–Рґ СЃРµСЂРІРµСЂР°
+            // Отримуємо нове посилання від сервера
             var result = await response.Content.ReadFromJsonAsync<AvatarUploadResponse>();
             return result?.AvatarUrl ?? string.Empty;
         }
 
-        // РћС‚СЂРёРјР°РЅРЅСЏ СЃРїРёСЃРєСѓ Р·Р±РµСЂРµР¶РµРЅРёС… РєР°СЂС‚РѕРє
+        // Отримання списку збережених карток
         public async Task<List<SavedCardDto>> GetSavedCardsAsync()
         {
             try
@@ -205,12 +205,12 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ РєР°СЂС‚РѕРє: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка завантаження карток: {ex.Message}");
                 return new List<SavedCardDto>();
             }
         }
 
-        // РџРѕРїРѕРІРЅРµРЅРЅСЏ Р±Р°Р»Р°РЅСЃСѓ
+        // Поповнення балансу
         public async Task<decimal> TopUpWalletAsync(TopUpRequest request)
         {
             var response = await ExecuteWithAuthAsync(() =>
@@ -224,31 +224,31 @@ namespace NovaGames.UI.Services
             return result?.NewBalance ?? 0;
         }
 
-        // РћС‚СЂРёРјР°РЅРЅСЏ С–РіСЂРѕРІРѕС— Р±С–Р±Р»С–РѕС‚РµРєРё РєРѕСЂРёСЃС‚СѓРІР°С‡Р°
+        // Отримання ігрової бібліотеки користувача
         public async Task<List<LibraryGameDto>> GetLibraryGamesAsync()
         {
             try
             {
                 var response = await ExecuteWithAuthAsync(() =>
-                    new HttpRequestMessage(HttpMethod.Get, "https://localhost:7232/api/v1/library/my-games"));
+                    new HttpRequestMessage(HttpMethod.Get, "http://localhost:5000/api/v1/library/my-games"));
 
                 return await response.Content.ReadFromJsonAsync<List<LibraryGameDto>>() ?? new List<LibraryGameDto>();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ Р±С–Р±Р»С–РѕС‚РµРєРё: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка завантаження бібліотеки: {ex.Message}");
                 return new List<LibraryGameDto>();
             }
         }
 
-        // Р—РјС–РЅР° РєР°С‚РµРіРѕСЂС–С— РіСЂРё РІ Р±С–Р±Р»С–РѕС‚РµС†С–
+        // Зміна категорії гри в бібліотеці
         public async Task<bool> ChangeGameCategoryAsync(int productId, string newCategory)
         {
             try
             {
                 var requestBody = new { ProductId = productId, NewCategory = newCategory };
                 var response = await ExecuteWithAuthAsync(() =>
-                    new HttpRequestMessage(HttpMethod.Put, "https://localhost:7232/api/v1/library/change-category")
+                    new HttpRequestMessage(HttpMethod.Put, "http://localhost:5000/api/v1/library/change-category")
                     {
                         Content = JsonContent.Create(requestBody)
                     });
@@ -257,19 +257,19 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° Р·РјС–РЅРё РєР°С‚РµРіРѕСЂС–С—: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка зміни категорії: {ex.Message}");
                 return false;
             }
         }
 
-        // РџРµСЂРµР№РјРµРЅСѓРІР°РЅРЅСЏ РєР°С‚РµРіРѕСЂС–С— РІ Р±С–Р±Р»С–РѕС‚РµС†С–
+        // Перейменування категорії в бібліотеці
         public async Task<bool> RenameCategoryAsync(string oldCategory, string newCategory)
         {
             try
             {
                 var requestBody = new { OldCategory = oldCategory, NewCategory = newCategory };
                 var response = await ExecuteWithAuthAsync(() =>
-                    new HttpRequestMessage(HttpMethod.Put, "https://localhost:7232/api/v1/library/rename-category")
+                    new HttpRequestMessage(HttpMethod.Put, "http://localhost:5000/api/v1/library/rename-category")
                     {
                         Content = JsonContent.Create(requestBody)
                     });
@@ -278,19 +278,19 @@ namespace NovaGames.UI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"РџРѕРјРёР»РєР° РїРµСЂРµР№РјРµРЅСѓРІР°РЅРЅСЏ РєР°С‚РµРіРѕСЂС–С—: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Помилка перейменування категорії: {ex.Message}");
                 return false;
             }
         }
     }
 
-    // DTO РґР»СЏ РІС–РґРїРѕРІС–РґС– РїС–СЃР»СЏ Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ Р°РІР°С‚Р°СЂРєРё
+    // DTO для відповіді після завантаження аватарки
     public class AvatarUploadResponse
     {
         public string AvatarUrl { get; set; } = string.Empty;
     }
 
-    // DTO РґР»СЏ РІС–РґРїСЂР°РІРєРё Р·Р°РїРёС‚Сѓ РЅР° РїРѕРїРѕРІРЅРµРЅРЅСЏ
+    // DTO для відправки запиту на поповнення
     public class TopUpRequest
     {
         public decimal Amount { get; set; }
@@ -300,13 +300,13 @@ namespace NovaGames.UI.Services
         public bool SaveCard { get; set; }
     }
 
-    // DTO РґР»СЏ РѕС‚СЂРёРјР°РЅРЅСЏ РЅРѕРІРѕРіРѕ Р±Р°Р»Р°РЅСЃСѓ
+    // DTO для отримання нового балансу
     public class TopUpResponse
     {
         public decimal NewBalance { get; set; }
     }
 
-    // DTO РґР»СЏ Р·Р±РµСЂРµР¶РµРЅРёС… РєР°СЂС‚РѕРє
+    // DTO для збережених карток
     public class SavedCardDto
     {
         public int Id { get; set; }
@@ -315,39 +315,39 @@ namespace NovaGames.UI.Services
         public string PaymentToken { get; set; } = string.Empty;
     }
 
-    // РњРѕРґРµР»СЊ РґР»СЏ РІС–РґРѕР±СЂР°Р¶РµРЅРЅСЏ РіСЂРё РІ Р‘С–Р±Р»С–РѕС‚РµС†С– (UI)
+    // Модель для відображення гри в Бібліотеці (UI)
     public class LibraryGameDto
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string IconUrl { get; set; } = string.Empty;
-        public string Category { get; set; } = "Р‘РµР· РєР°С‚РµРіРѕСЂС–С—";
+        public string Category { get; set; } = "Без категорії";
         public bool IsInstalled { get; set; } = false;
         public string DownloadUrl { get; set; } = string.Empty;
-        public DateTime AcquiredAt { get; set; } // Р”Р°С‚Р° РїРѕРєСѓРїРєРё
-        public double SizeGB { get; set; }       // Р РѕР·РјС–СЂ РґР»СЏ СЃРѕСЂС‚СѓРІР°РЅРЅСЏ
-        public DateTime? LastPlayedAt { get; set; } // Р”Р°С‚Р° РѕСЃС‚Р°РЅРЅСЊРѕС— РіСЂРё
+        public DateTime AcquiredAt { get; set; } // Дата покупки
+        public double SizeGB { get; set; }       // Розмір для сортування
+        public DateTime? LastPlayedAt { get; set; } // Дата останньої гри
 
-        public string HeroImageUrl { get; set; } = string.Empty; // Р’РµР»РёРєР° РѕР±РєР»Р°РґРёРЅРєР°-Р±Р°РЅРµСЂ
+        public string HeroImageUrl { get; set; } = string.Empty; // Велика обкладинка-банер
         public List<string> ScreenshotPaths { get; set; } = new List<string>();
-        public long PlaytimeSeconds { get; set; } = 0; // РќР°РіСЂР°РЅРёР№ С‡Р°СЃ
+        public long PlaytimeSeconds { get; set; } = 0; // Награний час
 
-        // Р РѕР±РёС‚СЊ Р· СЃРµРєСѓРЅРґ РєСЂР°СЃРёРІРёР№ С‚РµРєСЃС‚ "12 РіРѕРґ. 30 С…РІ."
+        // Робить з секунд красивий текст "12 год. 30 хв."
         public string DisplayPlaytime
         {
             get
             {
-                if (PlaytimeSeconds == 0) return "Р©Рµ РЅРµ Р·Р°РїСѓСЃРєР°Р»Р°СЃСЊ";
+                if (PlaytimeSeconds == 0) return "Ще не запускалась";
                 TimeSpan time = TimeSpan.FromSeconds(PlaytimeSeconds);
-                if (time.TotalHours < 1) return $"{time.Minutes} С…РІ.";
-                return $"{(int)time.TotalHours} РіРѕРґ. {time.Minutes} С…РІ.";
+                if (time.TotalHours < 1) return $"{time.Minutes} хв.";
+                return $"{(int)time.TotalHours} год. {time.Minutes} хв.";
             }
         }
 
-        // РљСЂР°СЃРёРІРёР№ С„РѕСЂРјР°С‚ РґР°С‚Рё (РЅР°РїСЂ. "21 С‚СЂР°РІРЅСЏ 2026")
+        // Красивий формат дати (напр. "21 травня 2026")
         public string LastPlayedDate => LastPlayedAt.HasValue
             ? LastPlayedAt.Value.ToString("dd MMMM yyyy")
-            : "РќС–РєРѕР»Рё";
+            : "Ніколи";
     }
 
 }

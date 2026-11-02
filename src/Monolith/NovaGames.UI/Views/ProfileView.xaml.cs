@@ -1,15 +1,15 @@
-п»їusing Microsoft.Extensions.DependencyInjection;
-using Microsoft.Win32; // Р”Р»СЏ РґС–Р°Р»РѕРіСѓ РІРёР±РѕСЂСѓ С„Р°Р№Р»Сѓ (Р°РІР°С‚Р°СЂРєРё)
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32; // Для діалогу вибору файлу (аватарки)
 using NovaGames.Core.Interfaces;
 using NovaGames.Core.Models;
 using NovaGames.Core.Services;
 using NovaGames.UI.Services;
-using System.IO; // Р”Р»СЏ СЂРѕР±РѕС‚Рё Р· С„Р°Р№Р»Р°РјРё С‚Р° MemoryStream
+using System.IO; // Для роботи з файлами та MemoryStream
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging; // Р”Р»СЏ BitmapImage
+using System.Windows.Media.Imaging; // Для BitmapImage
 using System.Windows.Shapes;
 
 namespace NovaGames.UI.Views
@@ -42,51 +42,51 @@ namespace NovaGames.UI.Views
                 else if (rbPurchases.IsChecked == true) MoveIndicatorTo(rbPurchases);
             };
 
-            // Р›РѕРІРёРјРѕ РїРµСЂРµС…РѕРґРё РјС–Р¶ РњР°РіР°Р·РёРЅРѕРј, Р‘С–Р±Р»С–РѕС‚РµРєРѕСЋ С‚Р° РџСЂРѕС„С–Р»РµРј
+            // Ловимо переходи між Магазином, Бібліотекою та Профілем
             this.IsVisibleChanged += (s, e) =>
             {
                 if (this.IsVisible)
                 {
-                    ResetAllStates(); // РћС‡РёС‰Р°С”РјРѕ РІРµСЃСЊ РјСѓСЃРѕСЂ С– РїС–РґС‚СЏРіСѓС”РјРѕ СЃРІС–Р¶С– РґР°РЅС–
+                    ResetAllStates(); // Очищаємо весь мусор і підтягуємо свіжі дані
                 }
             };
         }
 
-        // Р†РќР†Р¦Р†РђР›Р†Р—РђР¦Р†РЇ Р”РђРќРРҐ (Р’РљР›Р®Р§РђР®Р§Р РђР’РђРўРђР РљРЈ)
+        // ІНІЦІАЛІЗАЦІЯ ДАНИХ (ВКЛЮЧАЮЧИ АВАТАРКУ)
         private void InitializeProfile()
         {
             if (_userSession.CurrentUser == null) return;
 
             var user = _userSession.CurrentUser;
 
-            // 1. Р’СЃС‚Р°РЅРѕРІР»СЋС”РјРѕ РЅС–Рє С‚Р° Р±Р°Р»Р°РЅСЃ
+            // 1. Встановлюємо нік та баланс
             txtUsernameLabel.Text = user.Username;
-            txtBalanceLabel.Text = $"Р‘Р°Р»Р°РЅСЃ: {user.WalletBalance:N2} в‚ґ";
+            txtBalanceLabel.Text = $"Баланс: {user.WalletBalance:N2} ?";
 
-            // 2. Р’СЃС‚Р°РЅРѕРІР»СЋС”РјРѕ Р±СѓРєРІСѓ Р°РІР°С‚Р°СЂРєРё
+            // 2. Встановлюємо букву аватарки
             if (!string.IsNullOrEmpty(user.Username))
             {
                 txtProfileAvatarLetter.Text = user.Username.Substring(0, 1).ToUpper();
             }
 
-            // 3. Р’СЃС‚Р°РЅРѕРІР»СЋС”РјРѕ РєРѕР»С–СЂ СЂР°РјРєРё С‚Р° С–РЅРґРёРєР°С‚РѕСЂР°
+            // 3. Встановлюємо колір рамки та індикатора
             try
             {
                 string savedHex = user.AvatarBorderColorHex;
                 var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(savedHex));
 
-                // Р¤Р°СЂР±СѓС”РјРѕ СЂР°РјРєСѓ РЅР°РІРєРѕР»Рѕ Р°РІР°С‚Р°СЂРєРё
+                // Фарбуємо рамку навколо аватарки
                 ProfileAvatarCircle.BorderBrush = brush;
 
-                // Р’РїРёСЃСѓС”РјРѕ РєРѕР»С–СЂ Сѓ TextBox
+                // Вписуємо колір у TextBox
                 txtHexColor.Text = savedHex;
 
-                // РџСЂРѕР±С–РіР°С”РјРѕСЃСЏ РїРѕ РІСЃС–С… РїСЂРµСЃРµС‚Р°С… (РєСЂСѓР¶РµС‡РєР°С…) С– РІРёРґС–Р»СЏС”РјРѕ С‚РѕР№, С‰Рѕ Р·Р±РµСЂС–РіСЃСЏ РІ Р‘Р”
+                // Пробігаємося по всіх пресетах (кружечках) і виділяємо той, що зберігся в БД
                 foreach (var child in ColorPresetsPanel.Children)
                 {
                     if (child is System.Windows.Shapes.Rectangle rect)
                     {
-                        // РЇРєС‰Рѕ РєРѕР»С–СЂ РєСЂСѓР¶РµС‡РєР° СЃРїС–РІРїР°РґР°С” Р·С– Р·Р±РµСЂРµР¶РµРЅРёРј вЂ” СЂРѕР±РёРјРѕ Р±С–Р»Сѓ СЂР°РјРєСѓ
+                        // Якщо колір кружечка співпадає зі збереженим — робимо білу рамку
                         if (rect.Tag is string tagHex && tagHex.Equals(savedHex, StringComparison.OrdinalIgnoreCase))
                         {
                             rect.Stroke = System.Windows.Media.Brushes.White;
@@ -94,14 +94,14 @@ namespace NovaGames.UI.Views
                         }
                         else
                         {
-                            rect.StrokeThickness = 0; // Р— С–РЅС€РёС… Р·РЅС–РјР°С”РјРѕ СЂР°РјРєСѓ
+                            rect.StrokeThickness = 0; // З інших знімаємо рамку
                         }
                     }
                 }
             }
-            catch { /* Р†РіРЅРѕСЂСѓС”РјРѕ, СЏРєС‰Рѕ РєРѕР»С–СЂ РїРѕС€РєРѕРґР¶РµРЅРёР№ Р°Р±Рѕ РІС–РґСЃСѓС‚РЅС–Р№ */ }
+            catch { /* Ігноруємо, якщо колір пошкоджений або відсутній */ }
 
-            // 4. Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ РєР°СЂС‚РёРЅРєСѓ, СЏРєС‰Рѕ РІРѕРЅР° С”
+            // 4. Завантажуємо картинку, якщо вона є
             if (!string.IsNullOrEmpty(user.AvatarUrl))
             {
                 LoadProfileAvatarImage(user.AvatarUrl);
@@ -112,7 +112,7 @@ namespace NovaGames.UI.Views
                 txtProfileAvatarLetter.Visibility = Visibility.Visible;
             }
 
-            // 5. Р›РѕРіС–РєР° РїРѕС€С‚Рё
+            // 5. Логіка пошти
             if (!string.IsNullOrEmpty(user.Email))
             {
                 _isEmailVerified = true;
@@ -123,12 +123,12 @@ namespace NovaGames.UI.Views
                 txtProfileEmail.Cursor = System.Windows.Input.Cursors.Arrow;
 
                 iconEmailVerified.Visibility = Visibility.Visible;
-                btnBindEmail.Content = "РџР РР’'РЇР—РђРўР Р†РќРЁРЈ РџРћРЁРўРЈ";
+                btnBindEmail.Content = "ПРИВ'ЯЗАТИ ІНШУ ПОШТУ";
                 btnBindEmail.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#333333"));
             }
         }
 
-        // Р”РѕРїРѕРјС–Р¶РЅРёР№ РјРµС‚РѕРґ: РљРѕРЅРІРµСЂС‚СѓС” Base64 Сѓ РєР°СЂС‚РёРЅРєСѓ РґР»СЏ UI
+        // Допоміжний метод: Конвертує Base64 у картинку для UI
         private void LoadProfileAvatarImage(string avatarData)
         {
             try
@@ -138,19 +138,19 @@ namespace NovaGames.UI.Views
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
 
-                // РџРµСЂРµРІС–СЂСЏС”РјРѕ, С‡Рё С†Рµ СЃС‚Р°СЂРёР№ С„РѕСЂРјР°С‚ Base64 (РґР»СЏ СЃСѓРјС–СЃРЅРѕСЃС‚С–) С‡Рё РЅРѕРІРёР№ URL
+                // Перевіряємо, чи це старий формат Base64 (для сумісності) чи новий URL
                 if (avatarData.StartsWith("/images/"))
                 {
-                    // Р¤РѕСЂРјСѓС”РјРѕ РїРѕРІРЅРµ РїРѕСЃРёР»Р°РЅРЅСЏ РґРѕ РЅР°С€РѕРіРѕ Р±РµРєРµРЅРґСѓ
-                    string fullUrl = $"https://localhost:7232{avatarData}";
+                    // Формуємо повне посилання до нашого бекенду
+                    string fullUrl = $"http://localhost:5000{avatarData}";
                     bitmap.UriSource = new Uri(fullUrl, UriKind.Absolute);
 
-                    // Р—РјСѓС€СѓС”РјРѕ WPF С–РіРЅРѕСЂСѓРІР°С‚Рё РєРµС€, С‰РѕР± Р°РІР°С‚Р°СЂРєР° С‚РѕС‡РЅРѕ РѕРЅРѕРІРёР»Р°СЃСЊ!
+                    // Змушуємо WPF ігнорувати кеш, щоб аватарка точно оновилась!
                     bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
                 }
                 else
                 {
-                    // Р—Р°РїР°СЃРЅРёР№ РІР°СЂС–Р°РЅС‚ РґР»СЏ СЃС‚Р°СЂРёС… Base64 Р°РІР°С‚Р°СЂРѕРє
+                    // Запасний варіант для старих Base64 аватарок
                     byte[] bytes = Convert.FromBase64String(avatarData);
                     bitmap.StreamSource = new MemoryStream(bytes);
                 }
@@ -164,21 +164,21 @@ namespace NovaGames.UI.Views
             }
             catch (Exception ex)
             {
-                _ = _logger?.LogAsync($"РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё Р°РІР°С‚Р°СЂРєСѓ РєРѕСЂРёСЃС‚СѓРІР°С‡Р° ID:{_userSession.CurrentUser?.Id}. Р”РµС‚Р°Р»С–: {ex.Message}", LogType.WARNING);
+                _ = _logger?.LogAsync($"Не вдалося завантажити аватарку користувача ID:{_userSession.CurrentUser?.Id}. Деталі: {ex.Message}", LogType.WARNING);
                 imgProfileAvatar.Visibility = Visibility.Collapsed;
                 txtProfileAvatarLetter.Visibility = Visibility.Visible;
             }
         }
 
-        // РљРќРћРџРљР РљРђРЎРўРћРњР†Р—РђР¦Р†Р‡ (РљРћР›Р†Р  РўРђ Р¤РћРўРћ)
+        // КНОПКИ КАСТОМІЗАЦІЇ (КОЛІР ТА ФОТО)
         private void ColorPreset_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (sender is System.Windows.Shapes.Rectangle clickedRect && clickedRect.Tag is string hexColor)
             {
-                // 1. РћРЅРѕРІР»СЋС”РјРѕ С‚РµРєСЃС‚ РІ TextBox
+                // 1. Оновлюємо текст в TextBox
                 txtHexColor.Text = hexColor;
 
-                // 2. Р—РЅС–РјР°С”РјРѕ Р±С–Р»Рµ РѕР±РІРµРґРµРЅРЅСЏ Р· РЈРЎР†РҐ РїСЂРµСЃРµС‚С–РІ
+                // 2. Знімаємо біле обведення з УСІХ пресетів
                 foreach (var child in ColorPresetsPanel.Children)
                 {
                     if (child is System.Windows.Shapes.Rectangle rect)
@@ -187,20 +187,20 @@ namespace NovaGames.UI.Views
                     }
                 }
 
-                // 3. Р”РѕРґР°С”РјРѕ Р±С–Р»Рµ РѕР±РІРµРґРµРЅРЅСЏ С‚С–Р»СЊРєРё С‚РѕРјСѓ, РЅР° СЏРєРёР№ РєР»С–РєРЅСѓР»Рё
+                // 3. Додаємо біле обведення тільки тому, на який клікнули
                 clickedRect.Stroke = System.Windows.Media.Brushes.White;
                 clickedRect.StrokeThickness = 2;
             }
         }
 
-        // РЇРєС‰Рѕ СЋР·РµСЂ РІРёСЂС–С€РёС‚СЊ СЃР°Рј РІРїРёСЃР°С‚Рё HEX-РєРѕРґ РІСЂСѓС‡РЅСѓ
+        // Якщо юзер вирішить сам вписати HEX-код вручну
         private async void TxtHexColor_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (!IsLoaded || _userSession?.CurrentUser == null) return;
 
             string hexColor = txtHexColor.Text.Trim();
 
-            // Р’Р°Р»С–РґР°С†С–СЏ HEX-РєРѕРґСѓ
+            // Валідація HEX-коду
             if (hexColor.StartsWith("#") && (hexColor.Length == 7 || hexColor.Length == 9))
             {
                 try
@@ -208,22 +208,22 @@ namespace NovaGames.UI.Views
                     var color = (Color)ColorConverter.ConvertFromString(hexColor);
                     var brush = new SolidColorBrush(color);
 
-                    // 1. РћРЅРѕРІР»СЋС”РјРѕ UI РїРѕС‚РѕС‡РЅРѕРіРѕ РІС–РєРЅР° РїСЂРѕС„С–Р»СЋ РјРёС‚С‚С”РІРѕ
-                    // 1.1 РћРЅРѕРІР»СЋС”РјРѕ РІРµР»РёРєСѓ СЂР°РјРєСѓ РІ СЃР°РјРѕРјСѓ РїСЂРѕС„С–Р»С–
+                    // 1. Оновлюємо UI поточного вікна профілю миттєво
+                    // 1.1 Оновлюємо велику рамку в самому профілі
                     ProfileAvatarCircle.BorderBrush = brush;
 
-                    // 2. РћРЅРѕРІР»СЋС”РјРѕ Р»РѕРєР°Р»СЊРЅСѓ СЃРµСЃС–СЋ
+                    // 2. Оновлюємо локальну сесію
                     _userSession.CurrentUser.AvatarBorderColorHex = hexColor;
 
-                    // 3. Р—Р±РµСЂС–РіР°С”РјРѕ РІ Р‘Р”
+                    // 3. Зберігаємо в БД
                     await _userService.UpdateAvatarColorAsync(_userSession.CurrentUser.Id, hexColor);
 
-                    // 4. РЎРјРёРєР°С”РјРѕ С–РІРµРЅС‚
+                    // 4. Смикаємо івент
                     _userSession.NotifyUserUpdated();
                 }
                 catch (Exception ex)
                 {
-                    _ = _logger?.LogAsync($"РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ РєРѕР»СЊРѕСЂСѓ СЂР°РјРєРё (HEX: {hexColor}): {ex.Message}", LogType.WARNING);
+                    _ = _logger?.LogAsync($"Помилка збереження кольору рамки (HEX: {hexColor}): {ex.Message}", LogType.WARNING);
                 }
             }
         }
@@ -232,8 +232,8 @@ namespace NovaGames.UI.Views
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "Р’РёР±РµСЂС–С‚СЊ Р°РІР°С‚Р°СЂРєСѓ",
-                Filter = "Р—РѕР±СЂР°Р¶РµРЅРЅСЏ (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg"
+                Title = "Виберіть аватарку",
+                Filter = "Зображення (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg"
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -243,29 +243,29 @@ namespace NovaGames.UI.Views
                     var fileInfo = new FileInfo(openFileDialog.FileName);
                     if (fileInfo.Length > 2 * 1024 * 1024)
                     {
-                        MessageBox.Show("Р¤Р°Р№Р» Р·Р°РЅР°РґС‚Рѕ РІРµР»РёРєРёР№. РњР°РєСЃРёРјР°Р»СЊРЅРёР№ СЂРѕР·РјС–СЂ 2 РњР‘.");
+                        MessageBox.Show("Файл занадто великий. Максимальний розмір 2 МБ.");
                         return;
                     }
 
-                    // Р’Р†Р”РџР РђР’Р›РЇР„РњРћ Р¤РђР™Р›
+                    // ВІДПРАВЛЯЄМО ФАЙЛ
                     string newUrl = await _userService.UploadAvatarFileAsync(_userSession.CurrentUser!.Id, openFileDialog.FileName);
 
-                    // РћРЅРѕРІР»СЋС”РјРѕ СЃРµСЃС–СЋ С– СЃРёРЅС…СЂРѕРЅС–Р·СѓС”РјРѕ Р· С…С–РґРµСЂРѕРј MainWindow
+                    // Оновлюємо сесію і синхронізуємо з хідером MainWindow
                     _userSession.CurrentUser.AvatarUrl = newUrl;
                     _userSession.NotifyUserUpdated();
 
-                    // РћРЅРѕРІР»СЋС”РјРѕ РєР°СЂС‚РёРЅРєСѓ Р»РѕРєР°Р»СЊРЅРѕ
+                    // Оновлюємо картинку локально
                     LoadProfileAvatarImage(newUrl);
                 }
                 catch (Exception ex)
                 {
-                    _ = _logger?.LogAsync($"Р—Р±С–Р№ РїС–Рґ С‡Р°СЃ Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С„Р°Р№Р»Сѓ Р°РІР°С‚Р°СЂРєРё: {ex.Message}", LogType.ERROR);
-                    MessageBox.Show($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ: {ex.Message}");
+                    _ = _logger?.LogAsync($"Збій під час завантаження файлу аватарки: {ex.Message}", LogType.ERROR);
+                    MessageBox.Show($"Помилка завантаження: {ex.Message}");
                 }
             }
         }
 
-        // РќРђР’Р†Р“РђР¦Р†РЇ РўРђ РђРќР†РњРђР¦Р†Р‡
+        // НАВІГАЦІЯ ТА АНІМАЦІЇ
         private void Tab_Checked(object sender, RoutedEventArgs e)
         {
             if (!IsLoaded) return;
@@ -273,16 +273,16 @@ namespace NovaGames.UI.Views
             var selectedTab = sender as RadioButton;
             MoveIndicatorTo(selectedTab);
 
-            // Р›РћР“Р†РљРђ РџР•Р Р•РњРРљРђРќРќРЇ РљРћРќРўР•РќРўРЈ
+            // ЛОГІКА ПЕРЕМИКАННЯ КОНТЕНТУ
             if (selectedTab == rbSettings)
             {
-                // РџРѕРєР°Р·СѓС”РјРѕ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ, С…РѕРІР°С”РјРѕ С–РЅС€С– РІРєР»Р°РґРєРё
+                // Показуємо налаштування, ховаємо інші вкладки
                 if (SettingsContentGrid != null) SettingsContentGrid.Visibility = Visibility.Visible;
                 if (DynamicTabContent != null) DynamicTabContent.Visibility = Visibility.Collapsed;
             }
             else if (selectedTab == rbSubs)
             {
-                // РҐРѕРІР°С”РјРѕ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ, РїРѕРєР°Р·СѓС”РјРѕ РїС–РґРїРёСЃРєРё
+                // Ховаємо налаштування, показуємо підписки
                 SettingsContentGrid.Visibility = Visibility.Collapsed;
                 DynamicTabContent.Visibility = Visibility.Visible;
 
@@ -291,7 +291,7 @@ namespace NovaGames.UI.Views
             }
             else if (selectedTab == rbPurchases)
             {
-                // РҐРѕРІР°С”РјРѕ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ, РїРѕРєР°Р·СѓС”РјРѕ РїРѕРєСѓРїРєРё
+                // Ховаємо налаштування, показуємо покупки
                 SettingsContentGrid.Visibility = Visibility.Collapsed;
                 DynamicTabContent.Visibility = Visibility.Visible;
 
@@ -330,7 +330,7 @@ namespace NovaGames.UI.Views
             ProfileIndicator.BeginAnimation(FrameworkElement.WidthProperty, resizeAnimation);
         }
 
-        // Р›РћР“Р†РљРђ РџРћРЁРўР РўРђ РџРђР РћР›РЇ
+        // ЛОГІКА ПОШТИ ТА ПАРОЛЯ
         private void TxtProfileEmail_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (txtEmailError != null) txtEmailError.Visibility = Visibility.Collapsed;
@@ -346,7 +346,7 @@ namespace NovaGames.UI.Views
         {
             txtEmailError.Visibility = Visibility.Collapsed;
 
-            // РЎРўРђРќ 1: РЎРљРР”РђРќРќРЇ
+            // СТАН 1: СКИДАННЯ
             if (_isEmailVerified)
             {
                 _isEmailVerified = false;
@@ -355,27 +355,27 @@ namespace NovaGames.UI.Views
                 txtProfileEmail.Cursor = System.Windows.Input.Cursors.IBeam;
 
                 iconEmailVerified.Visibility = Visibility.Collapsed;
-                btnBindEmail.Content = "РџР РР’'РЇР—РђРўР РџРћРЁРўРЈ";
+                btnBindEmail.Content = "ПРИВ'ЯЗАТИ ПОШТУ";
                 txtVerificationCode.Text = "";
                 btnBindEmail.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00ADEF"));
                 return;
             }
 
-            // РЎРўРђРќ 2: Р’Р†Р”РџР РђР’РљРђ РљРћР”РЈ
+            // СТАН 2: ВІДПРАВКА КОДУ
             if (!_isWaitingForCode)
             {
                 string newEmail = txtProfileEmail.Text.Trim();
 
                 if (string.IsNullOrWhiteSpace(newEmail))
                 {
-                    txtEmailError.Text = "Р’РІРµРґС–С‚СЊ РїРѕС€С‚Сѓ!";
+                    txtEmailError.Text = "Введіть пошту!";
                     txtEmailError.Visibility = Visibility.Visible;
                     return;
                 }
 
                 if (newEmail == _userSession.CurrentUser?.Email)
                 {
-                    txtEmailError.Text = "Р¦Рµ РІР¶Рµ РІР°С€Р° РїРѕС‚РѕС‡РЅР° РїРѕС€С‚Р°!";
+                    txtEmailError.Text = "Це вже ваша поточна пошта!";
                     txtEmailError.Visibility = Visibility.Visible;
                     return;
                 }
@@ -391,20 +391,20 @@ namespace NovaGames.UI.Views
                     txtProfileEmail.Focusable = false;
 
                     panelVerificationCode.Visibility = Visibility.Visible;
-                    btnBindEmail.Content = "РџР†Р”РўР’Р•Р Р”РРўР";
+                    btnBindEmail.Content = "ПІДТВЕРДИТИ";
                 }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("Р·Р°Р№РЅСЏС‚Р°"))
+                    if (ex.Message.Contains("зайнята"))
                     {
-                        _ = _logger?.LogAsync($"РЎРїСЂРѕР±Р° РїСЂРёРІ'СЏР·РєРё РІР¶Рµ С–СЃРЅСѓСЋС‡РѕС— РїРѕС€С‚Рё: {newEmail}", LogType.WARNING);
-                        txtEmailError.Text = "РўР°РєР° РїРѕС€С‚Р° РІР¶Рµ РїСЂРёРІ'СЏР·Р°РЅР°!";
+                        _ = _logger?.LogAsync($"Спроба прив'язки вже існуючої пошти: {newEmail}", LogType.WARNING);
+                        txtEmailError.Text = "Така пошта вже прив'язана!";
                         txtEmailError.Visibility = Visibility.Visible;
                     }
                     else
                     {
-                        _ = _logger?.LogAsync($"РџРѕРјРёР»РєР° РІС–РґРїСЂР°РІРєРё РєРѕРґСѓ РЅР° РїРѕС€С‚Сѓ {newEmail}: {ex.Message}", LogType.ERROR);
-                        MessageBox.Show($"РџРѕРјРёР»РєР°: {ex.Message}");
+                        _ = _logger?.LogAsync($"Помилка відправки коду на пошту {newEmail}: {ex.Message}", LogType.ERROR);
+                        MessageBox.Show($"Помилка: {ex.Message}");
                     }
                 }
                 finally
@@ -412,7 +412,7 @@ namespace NovaGames.UI.Views
                     btnBindEmail.IsEnabled = true;
                 }
             }
-            // РЎРўРђРќ 3: РџР•Р Р•Р’Р†Р РљРђ РљРћР”РЈ
+            // СТАН 3: ПЕРЕВІРКА КОДУ
             else
             {
                 string code = txtVerificationCode.Text.Trim();
@@ -435,12 +435,12 @@ namespace NovaGames.UI.Views
                     txtProfileEmail.Focusable = false;
                     txtProfileEmail.Cursor = System.Windows.Input.Cursors.Arrow;
 
-                    btnBindEmail.Content = "РџР РР’'РЇР—РђРўР Р†РќРЁРЈ РџРћРЁРўРЈ";
+                    btnBindEmail.Content = "ПРИВ'ЯЗАТИ ІНШУ ПОШТУ";
                     btnBindEmail.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#333333"));
                 }
                 catch (Exception ex)
                 {
-                    _ = _logger?.LogAsync($"РќРµРІС–СЂРЅРёР№ РєРѕРґ Р°Р±Рѕ Р·Р±С–Р№ API РїС–Рґ С‡Р°СЃ РїС–РґС‚РІРµСЂРґР¶РµРЅРЅСЏ РїРѕС€С‚Рё: {ex.Message}", LogType.WARNING);
+                    _ = _logger?.LogAsync($"Невірний код або збій API під час підтвердження пошти: {ex.Message}", LogType.WARNING);
                     txtVerificationCode.BorderBrush = new SolidColorBrush(Colors.Red);
                 }
                 finally
@@ -468,7 +468,7 @@ namespace NovaGames.UI.Views
 
             if (!_isEmailVerified || string.IsNullOrEmpty(_userSession.CurrentUser?.Email))
             {
-                txtPasswordMessage.Text = "РџРѕС‚СЂС–Р±РЅР° РїСЂРёРІ'СЏР·Р°РЅР° РїРѕС€С‚Р°!";
+                txtPasswordMessage.Text = "Потрібна прив'язана пошта!";
                 txtPasswordMessage.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF5555"));
                 txtPasswordMessage.Visibility = Visibility.Visible;
                 return;
@@ -476,7 +476,7 @@ namespace NovaGames.UI.Views
 
             if (string.IsNullOrWhiteSpace(newPassword))
             {
-                txtPasswordMessage.Text = "Р’РІРµРґС–С‚СЊ РЅРѕРІРёР№ РїР°СЂРѕР»СЊ!";
+                txtPasswordMessage.Text = "Введіть новий пароль!";
                 txtPasswordMessage.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF5555"));
                 txtPasswordMessage.Visibility = Visibility.Visible;
                 return;
@@ -491,12 +491,12 @@ namespace NovaGames.UI.Views
 
                     _isWaitingForPasswordCode = true;
                     panelPasswordCode.Visibility = Visibility.Visible;
-                    btnUpdatePassword.Content = "РџР†Р”РўР’Р•Р Р”РРўР Р—РњР†РќРЈ";
+                    btnUpdatePassword.Content = "ПІДТВЕРДИТИ ЗМІНУ";
                 }
                 catch (Exception ex)
                 {
-                    _ = _logger?.LogAsync($"РџРѕРјРёР»РєР° Р·Р°РїРёС‚Сѓ РЅР° Р·РјС–РЅСѓ РїР°СЂРѕР»СЏ: {ex.Message}", LogType.ERROR);
-                    MessageBox.Show($"РџРѕРјРёР»РєР° РІС–РґРїСЂР°РІРєРё РєРѕРґСѓ: {ex.Message}");
+                    _ = _logger?.LogAsync($"Помилка запиту на зміну пароля: {ex.Message}", LogType.ERROR);
+                    MessageBox.Show($"Помилка відправки коду: {ex.Message}");
                 }
                 finally
                 {
@@ -518,15 +518,15 @@ namespace NovaGames.UI.Views
 
                     txtProfilePass.Password = "";
                     txtPasswordVerificationCode.Text = "";
-                    btnUpdatePassword.Content = "РћРќРћР’РРўР РџРђР РћР›Р¬";
+                    btnUpdatePassword.Content = "ОНОВИТИ ПАРОЛЬ";
 
-                    txtPasswordMessage.Text = "РџР°СЂРѕР»СЊ СѓСЃРїС–С€РЅРѕ Р·РјС–РЅРµРЅРѕ!";
+                    txtPasswordMessage.Text = "Пароль успішно змінено!";
                     txtPasswordMessage.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00D26A"));
                     txtPasswordMessage.Visibility = Visibility.Visible;
                 }
                 catch (Exception ex)
                 {
-                    _ = _logger?.LogAsync($"РџРѕРјРёР»РєР° Р·РјС–РЅРё РїР°СЂРѕР»СЏ (РЅРµРІС–СЂРЅРёР№ РєРѕРґ Р°Р±Рѕ РІР°Р»С–РґР°С†С–СЏ): {ex.Message}", LogType.WARNING); 
+                    _ = _logger?.LogAsync($"Помилка зміни пароля (невірний код або валідація): {ex.Message}", LogType.WARNING); 
                     txtPasswordVerificationCode.BorderBrush = new SolidColorBrush(Colors.Red);
                 }
                 finally
@@ -536,7 +536,7 @@ namespace NovaGames.UI.Views
             }
         }
 
-        // РћР§РР©Р•РќРќРЇ
+        // ОЧИЩЕННЯ
         private void ResetAllStates()
         {
             _isWaitingForPasswordCode = false;
@@ -552,7 +552,7 @@ namespace NovaGames.UI.Views
 
             if (btnUpdatePassword != null)
             {
-                btnUpdatePassword.Content = "РћРќРћР’РРўР РџРђР РћР›Р¬";
+                btnUpdatePassword.Content = "ОНОВИТИ ПАРОЛЬ";
                 btnUpdatePassword.IsEnabled = true;
             }
 
@@ -569,7 +569,7 @@ namespace NovaGames.UI.Views
                 if (panelVerificationCode != null) panelVerificationCode.Visibility = Visibility.Collapsed;
                 if (btnBindEmail != null)
                 {
-                    btnBindEmail.Content = "РџР РР’'РЇР—РђРўР РџРћРЁРўРЈ";
+                    btnBindEmail.Content = "ПРИВ'ЯЗАТИ ПОШТУ";
                     btnBindEmail.IsEnabled = true;
                 }
             }
@@ -580,10 +580,10 @@ namespace NovaGames.UI.Views
         private void BtnLogout_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new ConfirmWindow(
-                "Р’РРҐР†Р” Р— РђРљРђРЈРќРўРђ",
-                "Р’Рё РґС–Р№СЃРЅРѕ С…РѕС‡РµС‚Рµ РІРёР№С‚Рё Р· РїСЂРѕС„С–Р»СЋ?",
-                "Р’РР™РўР",
-                "Р”Р»СЏ РґРѕСЃС‚СѓРїСѓ РґРѕ Р±С–Р±Р»С–РѕС‚РµРєРё РґРѕРІРµРґРµС‚СЊСЃСЏ Р°РІС‚РѕСЂРёР·СѓРІР°С‚РёСЃСЊ Р·РЅРѕРІСѓ."
+                "ВИХІД З АКАУНТА",
+                "Ви дійсно хочете вийти з профілю?",
+                "ВИЙТИ",
+                "Для доступу до бібліотеки доведеться авторизуватись знову."
             )
             {
                 Owner = Window.GetWindow(this)
@@ -591,16 +591,16 @@ namespace NovaGames.UI.Views
 
             if (dialog.ShowDialog() == true)
             {
-                // 1. РћС‡РёС‰Р°С”РјРѕ СЃРµСЃС–СЋ
+                // 1. Очищаємо сесію
                 _userSession.CurrentUser = null;
                 _userSession.Token = null;
                 _userSession.RefreshToken = null;
 
-                // 2. Р’РёРґР°Р»СЏС”РјРѕ Р· РїР°Рј'СЏС‚С–
+                // 2. Видаляємо з пам'яті
                 var tokenStorage = App.AppHost!.Services.GetRequiredService<TokenStorageService>();
                 tokenStorage.ClearToken();
 
-                // 3. РџРµСЂРµС…С–Рґ РЅР° Р»РѕРіС–РЅ
+                // 3. Перехід на логін
                 var navigationService = App.AppHost!.Services.GetRequiredService<INavigationService>();
                 navigationService.NavigateTo<LoginWindow>(Window.GetWindow(this));
             }

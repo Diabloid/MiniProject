@@ -1,4 +1,4 @@
-п»їusing Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using NovaGames.Core.Entities;
 using NovaGames.Core.Interfaces;
 using NovaGames.Core.Models;
@@ -57,7 +57,7 @@ namespace NovaGames.UI.Views
             };
         }
 
-        // Р—РђР’РђРќРўРђР–Р•РќРќРЇ Р”РђРќРРҐ Р— РЎР•Р Р’Р•Р Рђ
+        // ЗАВАНТАЖЕННЯ ДАНИХ З СЕРВЕРА
         private async Task LoadGamesAsync()
         {
             try
@@ -73,8 +73,8 @@ namespace NovaGames.UI.Views
             }
             catch (Exception ex)
             {
-                _ = _logger?.LogAsync($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ СЃРїРёСЃРєСѓ С–РіРѕСЂ РґР»СЏ Р°РґРјС–РЅРєРё: {ex.Message}", LogType.ERROR);
-                MessageBox.Show($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С–РіРѕСЂ: {ex.Message}", "РџРѕРјРёР»РєР°", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = _logger?.LogAsync($"Помилка завантаження списку ігор для адмінки: {ex.Message}", LogType.ERROR);
+                MessageBox.Show($"Помилка завантаження ігор: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -83,11 +83,11 @@ namespace NovaGames.UI.Views
             try
             {
                 var usersEnum = await _userService.GetAllUsersAsync();
-                _allUsers = usersEnum.ToList(); // Р—Р±РµСЂС–РіР°С”РјРѕ Р»РѕРєР°Р»СЊРЅРѕ РґР»СЏ С„С–Р»СЊС‚СЂР°С†С–С—
+                _allUsers = usersEnum.ToList(); // Зберігаємо локально для фільтрації
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    // РџС–РґРєР»СЋС‡Р°С”РјРѕ С„С–Р»СЊС‚СЂР°С†С–СЋ
+                    // Підключаємо фільтрацію
                     ICollectionView view = CollectionViewSource.GetDefaultView(_allUsers);
                     view.Filter = AdminUsersFilter;
                     listAdminUsers.ItemsSource = view;
@@ -95,12 +95,12 @@ namespace NovaGames.UI.Views
             }
             catch (Exception ex)
             {
-                _ = _logger?.LogAsync($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ РєРѕСЂРёСЃС‚СѓРІР°С‡С–РІ: {ex.Message}", LogType.ERROR);
-                MessageBox.Show($"РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ РєРѕСЂРёСЃС‚СѓРІР°С‡С–РІ: {ex.Message}", "РџРѕРјРёР»РєР°", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = _logger?.LogAsync($"Помилка завантаження користувачів: {ex.Message}", LogType.ERROR);
+                MessageBox.Show($"Помилка завантаження користувачів: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // Р›РћР“Р†РљРђ РџРћРЁРЈРљРЈ Р’ РђР”РњР†РќР¦Р†
+        // ЛОГІКА ПОШУКУ В АДМІНЦІ
 
         private void TxtSearchGames_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -117,7 +117,7 @@ namespace NovaGames.UI.Views
                 string searchText = txtSearchGames.Text?.Trim().ToLower();
                 if (string.IsNullOrEmpty(searchText)) return true;
 
-                // РЁСѓРєР°С”РјРѕ Р·Р° РЅР°Р·РІРѕСЋ РіСЂРё
+                // Шукаємо за назвою гри
                 return game.Title.ToLower().Contains(searchText);
             }
             return false;
@@ -144,7 +144,7 @@ namespace NovaGames.UI.Views
             return false;
         }
 
-        // Р›РћР“Р†РљРђ РџР•Р Р•РљР›Р®Р§Р•РќРќРЇ Р’РљР›РђР”РћРљ (Р†Р“Р Р/РљРћР РРЎРўРЈР’РђР§Р†)
+        // ЛОГІКА ПЕРЕКЛЮЧЕННЯ ВКЛАДОК (ІГРИ/КОРИСТУВАЧІ)
         private void Tab_Checked(object sender, RoutedEventArgs e)
         {
             if (GamesContainer == null || UsersContainer == null) return;
@@ -167,26 +167,26 @@ namespace NovaGames.UI.Views
             }
         }
 
-        //Р›РћР“Р†РљРђ РљРќРћРџРћРљ РќРђ РљРђР РўР¦Р† Р“Р Р
-        // РњРµС‚РѕРґ РґР»СЏ РєРЅРѕРїРєРё "Р Р•Р”РђР“РЈР’РђРўР"
-        // РњРµС‚РѕРґ РґР»СЏ РєРЅРѕРїРєРё "Р Р•Р”РђР“РЈР’РђРўР"
+        //ЛОГІКА КНОПОК НА КАРТЦІ ГРИ
+        // Метод для кнопки "РЕДАГУВАТИ"
+        // Метод для кнопки "РЕДАГУВАТИ"
         private void BtnEdit_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is Game gameToEdit)
             {
-                // 1. РќРђР™Р“РћР›РћР’РќР†РЁР•: РћС‡РёС‰Р°С”РјРѕ РІРµСЃСЊ "Р±СЂСѓРґРЅРёР№" СЃС‚Р°РЅ РІС–Рґ РїРѕРїРµСЂРµРґРЅС–С… СЂРµРґР°РіСѓРІР°РЅСЊ!
+                // 1. НАЙГОЛОВНІШЕ: Очищаємо весь "брудний" стан від попередніх редагувань!
                 ClearForm();
 
                 _editingGame = gameToEdit;
 
-                // 2. Р—Р°РїРѕРІРЅСЋС”РјРѕ С‚РµРєСЃС‚РѕРІС– РїРѕР»СЏ
+                // 2. Заповнюємо текстові поля
                 txtTitle.Text = gameToEdit.Title;
                 txtPrice.Text = gameToEdit.Price.ToString("0.00");
                 txtDiscount.Text = gameToEdit.Discount.ToString("0");
                 txtDescription.Text = gameToEdit.Description;
                 chkIsPublished.IsChecked = gameToEdit.IsPublished;
 
-                // Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”РјРѕ РЅРѕРІСѓ СЃС‚СЂСѓРєС‚СѓСЂСѓ Media, Р° РЅРµ СЃС‚Р°СЂРµ ImagePath
+                // Використовуємо нову структуру Media, а не старе ImagePath
                 txtCoverPath.Text = gameToEdit.Media?.CoverUrl ?? "";
 
                 if (gameToEdit.Genres != null)
@@ -194,20 +194,20 @@ namespace NovaGames.UI.Views
                     txtGenres.Text = string.Join(", ", gameToEdit.Genres);
                 }
 
-                // 3. РџР†Р”РўРЇР“РЈР„РњРћ РћР‘РљР›РђР”РРќРљРЈ Р’ РџР Р•Р’'Р® Р— РЎР•Р Р’Р•Р Рђ
+                // 3. ПІДТЯГУЄМО ОБКЛАДИНКУ В ПРЕВ'Ю З СЕРВЕРА
                 if (!string.IsNullOrEmpty(gameToEdit.Media?.CoverUrl) && gameToEdit.Media.CoverUrl != "/Assets/default_game.png")
                 {
                     try
                     {
                         var coverUri = gameToEdit.Media.CoverUrl.StartsWith("/images/")
-                            ? new Uri($"https://localhost:7232{gameToEdit.Media.CoverUrl}", UriKind.Absolute)
+                            ? new Uri($"http://localhost:5000{gameToEdit.Media.CoverUrl}", UriKind.Absolute)
                             : new Uri(gameToEdit.Media.CoverUrl, UriKind.RelativeOrAbsolute);
 
                         var bitmap = new BitmapImage();
                         bitmap.BeginInit();
                         bitmap.UriSource = coverUri;
                         bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache; // Р†РіРЅРѕСЂСѓС”РјРѕ РєРµС€ WPF!
+                        bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache; // Ігноруємо кеш WPF!
                         bitmap.EndInit();
 
                         imgCoverPreview.Source = bitmap;
@@ -215,18 +215,18 @@ namespace NovaGames.UI.Views
                     }
                     catch (Exception ex)
                     {
-                        _ = _logger?.LogAsync($"РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё РїСЂРµРІ'СЋ РѕР±РєР»Р°РґРёРЅРєРё РґР»СЏ СЂРµРґР°РіСѓРІР°РЅРЅСЏ. URL: {gameToEdit.Media.CoverUrl}, РџРѕРјРёР»РєР°: {ex.Message}", LogType.WARNING);
+                        _ = _logger?.LogAsync($"Не вдалося завантажити прев'ю обкладинки для редагування. URL: {gameToEdit.Media.CoverUrl}, Помилка: {ex.Message}", LogType.WARNING);
                     }
                 }
 
-                // --- РџР†Р”РўРЇР“РЈР„РњРћ Р†РљРћРќРљРЈ ---
+                // --- ПІДТЯГУЄМО ІКОНКУ ---
                 txtIconPath.Text = gameToEdit.Media?.IconUrl ?? "";
                 if (!string.IsNullOrEmpty(gameToEdit.Media?.IconUrl) && gameToEdit.Media.IconUrl != "/Assets/default_icon.png")
                 {
                     try
                     {
                         var iconUri = gameToEdit.Media.IconUrl.StartsWith("/images/")
-                            ? new Uri($"https://localhost:7232{gameToEdit.Media.IconUrl}", UriKind.Absolute)
+                            ? new Uri($"http://localhost:5000{gameToEdit.Media.IconUrl}", UriKind.Absolute)
                             : new Uri(gameToEdit.Media.IconUrl, UriKind.RelativeOrAbsolute);
 
                         var bitmap = new BitmapImage();
@@ -241,32 +241,32 @@ namespace NovaGames.UI.Views
                     }
                     catch (Exception ex)
                     {
-                        _ = _logger?.LogAsync($"РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё РїСЂРµРІ'СЋ С–РєРѕРЅРєРё РґР»СЏ СЂРµРґР°РіСѓРІР°РЅРЅСЏ. URL: {gameToEdit.Media.IconUrl}, РџРѕРјРёР»РєР°: {ex.Message}", LogType.WARNING);
+                        _ = _logger?.LogAsync($"Не вдалося завантажити прев'ю іконки для редагування. URL: {gameToEdit.Media.IconUrl}, Помилка: {ex.Message}", LogType.WARNING);
                     }
                 }
 
-                // 4. РџР†Р”РўРЇР“РЈР„РњРћ РЎРљР Р†РќРЁРћРўР Р’ РџР Р•Р’'Р® Р— РЎР•Р Р’Р•Р Рђ
+                // 4. ПІДТЯГУЄМО СКРІНШОТИ В ПРЕВ'Ю З СЕРВЕРА
                 if (gameToEdit.Media?.Screenshots != null && gameToEdit.Media.Screenshots.Any())
                 {
-                    txtSelectedScreenshotsCount.Text = $"РќР° СЃРµСЂРІРµСЂС–: {gameToEdit.Media.Screenshots.Count}";
+                    txtSelectedScreenshotsCount.Text = $"На сервері: {gameToEdit.Media.Screenshots.Count}";
                     txtSelectedScreenshotsCount.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 173, 239));
 
-                    // === Р”РћР”РђР„РњРћ Р¦Р† Р”Р’Рђ Р РЇР”РљР ===
-                    // Р’РёС‚СЏРіСѓС”РјРѕ С‚С–Р»СЊРєРё РЅР°Р·РІРё С„Р°Р№Р»С–РІ Р· РґРѕРІРіРёС… СЃРµСЂРІРµСЂРЅРёС… С€Р»СЏС…С–РІ
+                    // === ДОДАЄМО ЦІ ДВА РЯДКИ ===
+                    // Витягуємо тільки назви файлів з довгих серверних шляхів
                     var fileNames = gameToEdit.Media.Screenshots.Select(s => System.IO.Path.GetFileName(s)).ToList();
-                    // Р’РїРёСЃСѓС”РјРѕ РїРµСЂС€С– 3 С„Р°Р№Р»Рё РІ TextBox, Р° РґР°Р»С– СЃС‚Р°РІРёРјРѕ "..."
+                    // Вписуємо перші 3 файли в TextBox, а далі ставимо "..."
                     txtScreenshotsPath.Text = string.Join("; ", fileNames.Take(3)) + (fileNames.Count > 3 ? " ..." : "");
                     // ============================
 
-                    // Р¤РѕСЂРјСѓС”РјРѕ РїРѕРІРЅС– РїРѕСЃРёР»Р°РЅРЅСЏ РґР»СЏ WPF, С‰РѕР± РІС–РЅ Р·РјС–Рі С—С… Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё РїРѕ HTTP
+                    // Формуємо повні посилання для WPF, щоб він зміг їх завантажити по HTTP
                     var fullScreenshotUrls = gameToEdit.Media.Screenshots.Select(url =>
-                        url.StartsWith("/images/") ? $"https://localhost:7232{url}" : url
+                        url.StartsWith("/images/") ? $"http://localhost:5000{url}" : url
                     ).ToList();
 
                     listScreenshotsPreview.ItemsSource = fullScreenshotUrls;
                 }
 
-                // 5. РџС–РґС‚СЏРіСѓРІР°РЅРЅСЏ СЃРїРµС†РёС„С–С‡РЅРёС… РїРѕР»С–РІ
+                // 5. Підтягування специфічних полів
                 if (gameToEdit is DigitalGame dg)
                 {
                     comboGameType.SelectedIndex = 0; // Digital
@@ -301,20 +301,20 @@ namespace NovaGames.UI.Views
                     chkAutoRenew.IsChecked = sg.IsAutoRenew;
                 }
 
-                // 6. РћРЅРѕРІР»РµРЅРЅСЏ РІС–Р·СѓР°Р»Сѓ РєРЅРѕРїРѕРє С‚Р° Р·Р°РіРѕР»РѕРІРєС–РІ
-                txtFormTitle.Text = "Р Р•Р”РђР“РЈР’РђРќРќРЇ Р“Р Р";
+                // 6. Оновлення візуалу кнопок та заголовків
+                txtFormTitle.Text = "РЕДАГУВАННЯ ГРИ";
                 txtFormTitle.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FFB900"));
-                btnSubmitGame.Content = "Р—Р‘Р•Р Р•Р“РўР РћРќРћР’Р›Р•РќРќРЇ";
+                btnSubmitGame.Content = "ЗБЕРЕГТИ ОНОВЛЕННЯ";
                 btnCancelEdit.Visibility = Visibility.Visible;
             }
         }
 
-        // РњРµС‚РѕРґ РґР»СЏ РєРЅРѕРїРєРё "Р’РР”РђР›РРўР"
+        // Метод для кнопки "ВИДАЛИТИ"
         private async void BtnDelete_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is Game gameToDelete)
             {
-                // 1. Р—РђРџРћР‘Р†Р–РќРРљ: РџР•Р Р•Р’Р†Р РљРђ РќРђРЇР’РќРћРЎРўР† Р’Р›РђРЎРќРРљР†Р’
+                // 1. ЗАПОБІЖНИК: ПЕРЕВІРКА НАЯВНОСТІ ВЛАСНИКІВ
                 btn.IsEnabled = false;
 
                 try
@@ -324,9 +324,9 @@ namespace NovaGames.UI.Views
                     if (hasOwners)
                     {
                         var warningDialog = new ConfirmWindow(
-                            "Р’РР”РђР›Р•РќРќРЇ Р—РђР‘РћР РћРќР•РќРћ",
-                            $"Р“СЂСѓ В«{gameToDelete.Title}В» РІР¶Рµ РїСЂРёРґР±Р°Р»Рё РєРѕСЂРёСЃС‚СѓРІР°С‡С–.\n\nР‘СѓРґСЊ Р»Р°СЃРєР°, Р·РЅС–РјС–С‚СЊ РіСЂСѓ Р· РїСЂРѕРґР°Р¶Сѓ (РїСЂРёС…РѕРІР°Р№С‚Рµ) Р·Р°РјС–СЃС‚СЊ РІРёРґР°Р»РµРЅРЅСЏ.",
-                            "Р—Р РћР—РЈРњР†Р›Рћ",
+                            "ВИДАЛЕННЯ ЗАБОРОНЕНО",
+                            $"Гру «{gameToDelete.Title}» вже придбали користувачі.\n\nБудь ласка, зніміть гру з продажу (приховайте) замість видалення.",
+                            "ЗРОЗУМІЛО",
                             "",
                             false,
                             "#F39C12")
@@ -340,8 +340,8 @@ namespace NovaGames.UI.Views
                 }
                 catch (Exception ex)
                 {
-                    _ = _logger?.LogAsync($"РџРѕРјРёР»РєР° РїРµСЂРµРІС–СЂРєРё РІР»Р°СЃРЅРёРєС–РІ РіСЂРё ID:{gameToDelete.Id}. Р”РµС‚Р°Р»С–: {ex.Message}", LogType.ERROR);
-                    MessageBox.Show("РќРµ РІРґР°Р»РѕСЃСЏ РїРµСЂРµРІС–СЂРёС‚Рё СЃС‚Р°С‚СѓСЃ РіСЂРё РІ Р±Р°Р·С– РґР°РЅРёС….", "РџРѕРјРёР»РєР°", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _ = _logger?.LogAsync($"Помилка перевірки власників гри ID:{gameToDelete.Id}. Деталі: {ex.Message}", LogType.ERROR);
+                    MessageBox.Show("Не вдалося перевірити статус гри в базі даних.", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
                 finally
@@ -349,11 +349,11 @@ namespace NovaGames.UI.Views
                     btn.IsEnabled = true;
                 }
 
-                // 2. РЎРўРђРќР”РђР РўРќР• Р’РР”РђР›Р•РќРќРЇ (СЏРєС‰Рѕ РІР»Р°СЃРЅРёРєС–РІ РЅРµРјР°С”)
+                // 2. СТАНДАРТНЕ ВИДАЛЕННЯ (якщо власників немає)
                 var dialog = new ConfirmWindow(
-                                "РџР†Р”РўР’Р•Р Р”Р–Р•РќРќРЇ Р’РР”РђР›Р•РќРќРЇ",
-                                $"Р’Рё РґС–Р№СЃРЅРѕ С…РѕС‡РµС‚Рµ РЅР°Р·Р°РІР¶РґРё РІРёРґР°Р»РёС‚Рё РіСЂСѓ\nВ«{gameToDelete.Title}В» Р· Р±Р°Р·Рё РґР°РЅРёС…?",
-                                "Р’РР”РђР›РРўР")
+                                "ПІДТВЕРДЖЕННЯ ВИДАЛЕННЯ",
+                                $"Ви дійсно хочете назавжди видалити гру\n«{gameToDelete.Title}» з бази даних?",
+                                "ВИДАЛИТИ")
                 {
                     Owner = Window.GetWindow(this)
                 };
@@ -363,7 +363,7 @@ namespace NovaGames.UI.Views
                     try
                     {
                         await _gameService.DeleteGameAsync(gameToDelete.Id);
-                        _ = _logger?.LogAsync($"РђРґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂ {_userSession.CurrentUser?.Username} РІРёРґР°Р»РёРІ РіСЂСѓ ID:{gameToDelete.Id}", LogType.INFO);
+                        _ = _logger?.LogAsync($"Адміністратор {_userSession.CurrentUser?.Username} видалив гру ID:{gameToDelete.Id}", LogType.INFO);
 
                         if (_editingGame != null && _editingGame.Id == gameToDelete.Id)
                         {
@@ -374,23 +374,23 @@ namespace NovaGames.UI.Views
                     }
                     catch (Exception ex)
                     {
-                        _ = _logger?.LogAsync($"РљСЂРёС‚РёС‡РЅР° РїРѕРјРёР»РєР° РїСЂРё РІРёРґР°Р»РµРЅРЅС– РіСЂРё ID:{gameToDelete.Id}. Р”РµС‚Р°Р»С–: {ex.Message}", LogType.ERROR);
-                        MessageBox.Show($"РќРµ РІРґР°Р»РѕСЃСЏ РІРёРґР°Р»РёС‚Рё РіСЂСѓ: {ex.Message}", "РџРѕРјРёР»РєР°", MessageBoxButton.OK, MessageBoxImage.Error);
+                        _ = _logger?.LogAsync($"Критична помилка при видаленні гри ID:{gameToDelete.Id}. Деталі: {ex.Message}", LogType.ERROR);
+                        MessageBox.Show($"Не вдалося видалити гру: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
         }
 
-        // Р›РћР“Р†РљРђ Р‘РћРљРћР’РћР‡ РџРђРќР•Р›Р† (Р¤РћР РњР) РљР•Р РЈР’РђРќРќРЇ Р†Р“Р РђРњР (CRUD)
-        // РњРµС‚РѕРґ РґР»СЏ РєРЅРѕРїРєРё "Р”РћР”РђРўР/Р—Р‘Р•Р Р•Р“РўР"
+        // ЛОГІКА БОКОВОЇ ПАНЕЛІ (ФОРМИ) КЕРУВАННЯ ІГРАМИ (CRUD)
+        // Метод для кнопки "ДОДАТИ/ЗБЕРЕГТИ"
         private async void BtnSubmitGame_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 btnSubmitGame.IsEnabled = false;
-                btnSubmitGame.Content = "Р—Р‘Р•Р Р•Р–Р•РќРќРЇ...";
+                btnSubmitGame.Content = "ЗБЕРЕЖЕННЯ...";
 
-                // Р—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С„Р°Р№Р»С–РІ (СЏРєС‰Рѕ РІРёР±СЂР°РЅРѕ)
+                // Завантаження файлів (якщо вибрано)
                 string finalCoverPath = txtCoverPath.Text;
 
                 if (!string.IsNullOrEmpty(_selectedCoverFilePath))
@@ -398,7 +398,7 @@ namespace NovaGames.UI.Views
                     finalCoverPath = await _gameService.UploadFileAsync(_selectedCoverFilePath, txtTitle.Text, "cover");
                 }
 
-                // Р¤РћР РњРЈР’РђРќРќРЇ РћР‘'Р„РљРўРђ Р“Р Р
+                // ФОРМУВАННЯ ОБ'ЄКТА ГРИ
                 var selectedType = (comboGameType.SelectedItem as ComboBoxItem)?.Tag?.ToString();
                 Game newGame;
 
@@ -418,7 +418,7 @@ namespace NovaGames.UI.Views
                         IsAutoRenew = chkAutoRenew.IsChecked ?? false
                     };
                 }
-                else // Digital (Р—Р° Р·Р°РјРѕРІС‡СѓРІР°РЅРЅСЏРј)
+                else // Digital (За замовчуванням)
                 {
                     newGame = new DigitalGame
                     {
@@ -448,16 +448,16 @@ namespace NovaGames.UI.Views
                     };
                 }
 
-                // Р—Р°РїРѕРІРЅРµРЅРЅСЏ СЃРїС–Р»СЊРЅРёС… РІР»Р°СЃС‚РёРІРѕСЃС‚РµР№
+                // Заповнення спільних властивостей
                 newGame.Title = txtTitle.Text;
                 newGame.Description = txtDescription.Text;
                 newGame.IsPublished = chkIsPublished.IsChecked ?? false;
 
-                // Р‘РµР·РїРµС‡РЅРёР№ РїР°СЂСЃРёРЅРі С‡РёСЃРµР»
+                // Безпечний парсинг чисел
                 newGame.Price = decimal.TryParse(txtPrice.Text, out var p) ? p : 0;
                 newGame.Discount = decimal.TryParse(txtDiscount.Text, out var d) ? d : 0;
 
-                // РџР°СЂСЃРёРЅРі Р¶Р°РЅСЂС–РІ (СЂРѕР·РґС–Р»РµРЅРЅСЏ РїРѕ РєРѕРјС–)
+                // Парсинг жанрів (розділення по комі)
                 if (!string.IsNullOrWhiteSpace(txtGenres.Text))
                 {
                     newGame.Genres = txtGenres.Text.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
@@ -479,7 +479,7 @@ namespace NovaGames.UI.Views
                     newGame.Media.CoverUrl = string.IsNullOrWhiteSpace(txtCoverPath.Text) ? "/Assets/default_game.png" : txtCoverPath.Text;
                 }
 
-                // РќРћР’РР™ РљРћР” Р”Р›РЇ Р†РљРћРќРљР:
+                // НОВИЙ КОД ДЛЯ ІКОНКИ:
                 if (!string.IsNullOrEmpty(_selectedIconFilePath))
                 {
                     newGame.Media.IconUrl = await _gameService.UploadFileAsync(_selectedIconFilePath, txtTitle.Text, "icon");
@@ -509,40 +509,40 @@ namespace NovaGames.UI.Views
                     newGame.Media.Screenshots = _editingGame.Media.Screenshots;
                 }
 
-                // Р’Р†Р”РџР РђР’РљРђ РќРђ РђРџР† РўРђ РћРўР РРњРђРќРќРЇ ID Р“Р Р
+                // ВІДПРАВКА НА АПІ ТА ОТРИМАННЯ ID ГРИ
                 int targetGameId = 0;
 
                 if (_editingGame == null)
                 {
-                    // РЎРўР’РћР Р•РќРќРЇ
+                    // СТВОРЕННЯ
                     var createdGame = await _gameService.CreateGameAsync(newGame);
                     if (createdGame != null)
                     {
                         targetGameId = createdGame.Id;
                     }
-                    _ = _logger?.LogAsync($"РЈСЃРїС–С€РЅРѕ СЃС‚РІРѕСЂРµРЅРѕ РЅРѕРІСѓ РіСЂСѓ: {newGame.Title}", LogType.INFO);
+                    _ = _logger?.LogAsync($"Успішно створено нову гру: {newGame.Title}", LogType.INFO);
                 }
                 else
                 {
-                    // РћРќРћР’Р›Р•РќРќРЇ
+                    // ОНОВЛЕННЯ
                     newGame.Id = _editingGame.Id;
                     await _gameService.UpdateGameAsync(newGame.Id, newGame);
                     targetGameId = newGame.Id;
-                    _ = _logger?.LogAsync($"РЈСЃРїС–С€РЅРѕ РѕРЅРѕРІР»РµРЅРѕ РіСЂСѓ ID:{newGame.Id} ({newGame.Title})", LogType.INFO);
+                    _ = _logger?.LogAsync($"Успішно оновлено гру ID:{newGame.Id} ({newGame.Title})", LogType.INFO);
                 }
 
                 // ==========================================
-                // РќРђР™Р“РћР›РћР’РќР†РЁР•: Р—РђР’РђРќРўРђР–РЈР„РњРћ .ZIP РђР РҐР†Р’
+                // НАЙГОЛОВНІШЕ: ЗАВАНТАЖУЄМО .ZIP АРХІВ
                 // ==========================================
                 if (targetGameId > 0 && !string.IsNullOrEmpty(_selectedZipFilePath))
                 {
-                    btnSubmitGame.Content = "Р—РђР’РђРќРўРђР–Р•РќРќРЇ РђР РҐР†Р’РЈ (Р¦Р• РњРћР–Р• Р—РђР™РќРЇРўР Р§РђРЎ)...";
+                    btnSubmitGame.Content = "ЗАВАНТАЖЕННЯ АРХІВУ (ЦЕ МОЖЕ ЗАЙНЯТИ ЧАС)...";
 
                     string serverPath = await _gameService.UploadGameArchiveAsync(targetGameId, _selectedZipFilePath);
 
                     if (string.IsNullOrEmpty(serverPath))
                     {
-                        MessageBox.Show("Р“СЂСѓ Р·Р±РµСЂРµР¶РµРЅРѕ, Р°Р»Рµ Р°СЂС…С–РІ РЅРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё.\nРњРѕР¶Р»РёРІРѕ, С„Р°Р№Р» Р·Р°РЅР°РґС‚Рѕ РІРµР»РёРєРёР№ Р°Р±Рѕ СЃРµСЂРІРµСЂ РІС–РґС…РёР»РёРІ Р·Р°РїРёС‚.", "РЈРІР°РіР°", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show("Гру збережено, але архів не вдалося завантажити.\nМожливо, файл занадто великий або сервер відхилив запит.", "Увага", MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                 }
 
@@ -551,8 +551,8 @@ namespace NovaGames.UI.Views
             }
             catch (Exception ex)
             {
-                _ = _logger?.LogAsync($"Р—Р±С–Р№ РїСЂРё Р·Р±РµСЂРµР¶РµРЅРЅС– РіСЂРё. Р”РµС‚Р°Р»С–: {ex.Message}", LogType.ERROR);
-                MessageBox.Show($"Р’РёРЅРёРєР»Р° РїРѕРјРёР»РєР° РїСЂРё Р·Р±РµСЂРµР¶РµРЅРЅС–: {ex.Message}", "РџРѕРјРёР»РєР°", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = _logger?.LogAsync($"Збій при збереженні гри. Деталі: {ex.Message}", LogType.ERROR);
+                MessageBox.Show($"Виникла помилка при збереженні: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -565,29 +565,29 @@ namespace NovaGames.UI.Views
             ClearForm();
         }
 
-        // РњРµС‚РѕРґ, СЏРєРёР№ РїРѕРІРµСЂС‚Р°С” С„РѕСЂРјСѓ РґРѕ РїРѕС‡Р°С‚РєРѕРІРѕРіРѕ СЃС‚Р°РЅСѓ
+        // Метод, який повертає форму до початкового стану
         private void ClearForm()
         {
             _editingGame = null;
 
-            // РћС‡РёС‰Р°С”РјРѕ С‚РµРєСЃС‚РѕРІС– РїРѕР»СЏ
+            // Очищаємо текстові поля
             txtTitle.Text = string.Empty;
             txtPrice.Text = string.Empty;
             txtDiscount.Text = "0";
             txtGenres.Text = string.Empty;
             txtDescription.Text = string.Empty;
 
-            // РЎРєРёРґР°С”РјРѕ ComboBox
+            // Скидаємо ComboBox
             comboGameType.SelectedIndex = 0;
 
-            // РћС‡РёС‰Р°С”РјРѕ С€Р»СЏС…Рё РґРѕ С„Р°Р№Р»С–РІ
+            // Очищаємо шляхи до файлів
             txtCoverPath.Text = string.Empty;
             txtScreenshotsPath.Text = string.Empty;
             _selectedCoverFilePath = null;
             _selectedScreenshotPaths.Clear();
             _selectedZipFilePath = string.Empty;
 
-            // РћС‡РёС‰Р°С”РјРѕ РЅРѕРІС– РґРёРЅР°РјС–С‡РЅС– РїРѕР»СЏ
+            // Очищаємо нові динамічні поля
             txtDownloadSize.Text = string.Empty;
             txtGameZipUrl.Text = string.Empty;
             txtShippingWeight.Text = string.Empty;
@@ -596,41 +596,41 @@ namespace NovaGames.UI.Views
             chkAutoRenew.IsChecked = false;
             chkIsPublished.IsChecked = true;
 
-            // РћС‡РёС‰Р°С”РјРѕ РїРѕР»СЏ СЃРёСЃС‚РµРјРЅРёС… РІРёРјРѕРі
+            // Очищаємо поля системних вимог
             txtMinOS.Text = string.Empty; txtMinProcessor.Text = string.Empty; txtMinMemory.Text = string.Empty; txtMinGraphics.Text = string.Empty; txtMinStorage.Text = string.Empty;
             txtRecOS.Text = string.Empty; txtRecProcessor.Text = string.Empty; txtRecMemory.Text = string.Empty; txtRecGraphics.Text = string.Empty; txtRecStorage.Text = string.Empty;
 
-            // РћС‡РёС‰Р°С”РјРѕ РєР°СЂС‚РёРЅРєРё РїСЂРµРІ'СЋ
+            // Очищаємо картинки прев'ю
             imgCoverPreview.Source = null;
             borderCoverPreview.Visibility = Visibility.Collapsed;
             listScreenshotsPreview.ItemsSource = null;
 
-            // РЎРєРёРґР°С”РјРѕ С–РєРѕРЅРєСѓ
+            // Скидаємо іконку
             txtIconPath.Text = string.Empty;
             _selectedIconFilePath = null;
             imgIconPreview.Source = null;
             borderIconPreview.Visibility = Visibility.Collapsed;
 
-            // РЎРєРёРґР°С”РјРѕ Р»С–С‡РёР»СЊРЅРёРє СЃРєСЂС–РЅС€РѕС‚С–РІ
-            txtSelectedScreenshotsCount.Text = "Р’РёР±СЂР°РЅРѕ: 0";
+            // Скидаємо лічильник скріншотів
+            txtSelectedScreenshotsCount.Text = "Вибрано: 0";
             txtSelectedScreenshotsCount.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(170, 170, 170));
 
-            // РџРѕРІРµСЂС‚Р°С”РјРѕ РІС–Р·СѓР°Р» С„РѕСЂРјРё
-            txtFormTitle.Text = "Р”РћР”РђРўР РќРћР’РЈ Р“Р РЈ";
+            // Повертаємо візуал форми
+            txtFormTitle.Text = "ДОДАТИ НОВУ ГРУ";
             txtFormTitle.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#00ADEF"));
 
-            btnSubmitGame.Content = "Р”РћР”РђРўР Р“Р РЈ";
+            btnSubmitGame.Content = "ДОДАТИ ГРУ";
             btnCancelEdit.Visibility = Visibility.Collapsed;
         }
 
-        // Р›РћР“Р†РљРђ Р’РР‘РћР РЈ РњР•Р”Р†Рђ (РћР‘РљР›РђР”РРќРљРђ + РЎРљР Р†РќРЁРћРўР)
-        // Р’РёР±С–СЂ РѕР±РєР»Р°РґРёРЅРєРё
+        // ЛОГІКА ВИБОРУ МЕДІА (ОБКЛАДИНКА + СКРІНШОТИ)
+        // Вибір обкладинки
         private void BtnBrowseCover_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "Р’РёР±РµСЂС–С‚СЊ РѕР±РєР»Р°РґРёРЅРєСѓ РіСЂРё",
-                Filter = "Р—РѕР±СЂР°Р¶РµРЅРЅСЏ (*.jpg, *.jpeg, *.png)|*.jpg;*.jpeg;*.png"
+                Title = "Виберіть обкладинку гри",
+                Filter = "Зображення (*.jpg, *.jpeg, *.png)|*.jpg;*.jpeg;*.png"
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -649,13 +649,13 @@ namespace NovaGames.UI.Views
             }
         }
 
-        // РњРµС‚РѕРґ РґР»СЏ РІРёР±РѕСЂСѓ С–РєРѕРЅРєРё
+        // Метод для вибору іконки
         private void BtnBrowseIcon_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "Р’РёР±РµСЂС–С‚СЊ С–РєРѕРЅРєСѓ РіСЂРё",
-                Filter = "Р—РѕР±СЂР°Р¶РµРЅРЅСЏ (*.png, *.jpg, *.jpeg, *.ico)|*.png;*.jpg;*.jpeg;*.ico"
+                Title = "Виберіть іконку гри",
+                Filter = "Зображення (*.png, *.jpg, *.jpeg, *.ico)|*.png;*.jpg;*.jpeg;*.ico"
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -678,8 +678,8 @@ namespace NovaGames.UI.Views
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = "РђСЂС…С–РІРё С–РіРѕСЂ (*.zip)|*.zip|Р’СЃС– С„Р°Р№Р»Рё (*.*)|*.*",
-                Title = "Р’РёР±РµСЂС–С‚СЊ .zip Р°СЂС…С–РІ Р· РіСЂРѕСЋ"
+                Filter = "Архіви ігор (*.zip)|*.zip|Всі файли (*.*)|*.*",
+                Title = "Виберіть .zip архів з грою"
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -689,13 +689,13 @@ namespace NovaGames.UI.Views
             }
         }
 
-        // РњРµС‚РѕРґ РґР»СЏ РІРёР±РѕСЂСѓ СЃРєСЂС–РЅС€РѕС‚С–РІ
+        // Метод для вибору скріншотів
         private void BtnBrowseScreenshots_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "Р’РёР±РµСЂС–С‚СЊ СЃРєСЂС–РЅС€РѕС‚Рё (РґРѕ 15 С€С‚.)",
-                Filter = "Р—РѕР±СЂР°Р¶РµРЅРЅСЏ|*.jpg;*.jpeg;*.png;*.webp",
+                Title = "Виберіть скріншоти (до 15 шт.)",
+                Filter = "Зображення|*.jpg;*.jpeg;*.png;*.webp",
                 Multiselect = true
             };
 
@@ -704,7 +704,7 @@ namespace NovaGames.UI.Views
                 _selectedScreenshotPaths = openFileDialog.FileNames.Take(15).ToList();
 
                 txtScreenshotsPath.Text = string.Join("; ", openFileDialog.SafeFileNames.Take(3)) + " ...";
-                txtSelectedScreenshotsCount.Text = $"Р’РёР±СЂР°РЅРѕ: {_selectedScreenshotPaths.Count}";
+                txtSelectedScreenshotsCount.Text = $"Вибрано: {_selectedScreenshotPaths.Count}";
                 txtSelectedScreenshotsCount.Foreground = _selectedScreenshotPaths.Count > 0
                     ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 173, 239))
                     : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(170, 170, 170));
@@ -714,7 +714,7 @@ namespace NovaGames.UI.Views
             }
         }
 
-        // РњРµС‚РѕРґ РґР»СЏ РіРѕСЂРёР·РѕРЅС‚Р°Р»СЊРЅРѕС— РїСЂРѕРєСЂСѓС‚РєРё РєРѕР»С–С‰Р°С‚РєРѕРј РјРёС€С– РІ РѕР±Р»Р°СЃС‚С– СЃРєСЂС–РЅС€РѕС‚С–РІ
+        // Метод для горизонтальної прокрутки коліщатком миші в області скріншотів
         private void ScreenshotsScroll_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
             if (sender is ScrollViewer scrollViewer)
@@ -724,7 +724,7 @@ namespace NovaGames.UI.Views
             }
         }
 
-        // Р›РћР“Р†РљРђ РљРћР РРЎРўРЈР’РђР§Р†Р’
+        // ЛОГІКА КОРИСТУВАЧІВ
         private void ListAdminUsers_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (listAdminUsers.SelectedItem is User selectedUser)
@@ -744,7 +744,7 @@ namespace NovaGames.UI.Views
                 if (_userSession.CurrentUser != null && selectedUser.Id == _userSession.CurrentUser.Id)
                 {
                     panelUserActions.Visibility = Visibility.Collapsed;
-                    txtNoUserSelected.Text = "Р’Р РќР• РњРћР–Р•РўР• Р—РњР†РќР®Р’РђРўР РџР РђР’Рђ Р’Р›РђРЎРќРћР“Рћ РђРљРђРЈРќРўРђ";
+                    txtNoUserSelected.Text = "ВИ НЕ МОЖЕТЕ ЗМІНЮВАТИ ПРАВА ВЛАСНОГО АКАУНТА";
                     txtNoUserSelected.Visibility = Visibility.Visible;
                     return;
                 }
@@ -752,7 +752,7 @@ namespace NovaGames.UI.Views
                 if (selectedUser.Role == UserRole.SuperAdmin)
                 {
                     panelUserActions.Visibility = Visibility.Collapsed;
-                    txtNoUserSelected.Text = "Р’Р РќР• РњРћР–Р•РўР• Р—РњР†РќР®Р’РђРўР РџР РђР’Рђ РЎРЈРџР•Р РђР”РњР†РќР†РЎРўР РђРўРћР Рђ";
+                    txtNoUserSelected.Text = "ВИ НЕ МОЖЕТЕ ЗМІНЮВАТИ ПРАВА СУПЕРАДМІНІСТРАТОРА";
                     txtNoUserSelected.Visibility = Visibility.Visible;
                     return;
                 }
@@ -774,7 +774,7 @@ namespace NovaGames.UI.Views
             }
             else
             {
-                txtNoUserSelected.Text = "РћР‘Р•Р Р†РўР¬ РљРћР РРЎРўРЈР’РђР§Рђ Р—Р† РЎРџРРЎРљРЈ";
+                txtNoUserSelected.Text = "ОБЕРІТЬ КОРИСТУВАЧА ЗІ СПИСКУ";
                 txtNoUserSelected.Visibility = Visibility.Visible;
                 panelUserActions.Visibility = Visibility.Collapsed;
                 _selectedUser = null;
@@ -800,18 +800,18 @@ namespace NovaGames.UI.Views
             }
             catch (UnauthorizedAccessException ex)
             {
-                _ = _logger?.LogAsync($"РђРґРјС–РЅ РІС‚СЂР°С‚РёРІ РїСЂР°РІР° РїС–Рґ С‡Р°СЃ РґС–С— Р· РєРѕСЂРёСЃС‚СѓРІР°С‡РµРј: {ex.Message}", LogType.WARNING);
-                MessageBox.Show(ex.Message, "РЈРІР°РіР°", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _ = _logger?.LogAsync($"Адмін втратив права під час дії з користувачем: {ex.Message}", LogType.WARNING);
+                MessageBox.Show(ex.Message, "Увага", MessageBoxButton.OK, MessageBoxImage.Warning);
                 this.Visibility = Visibility.Collapsed;
             }
             catch (Exception ex)
             {
-                _ = _logger?.LogAsync($"РџРѕРјРёР»РєР° Р·РјС–РЅРё СЂРѕР»С– РєРѕСЂРёСЃС‚СѓРІР°С‡Р° ID:{_selectedUser.Id}. Р”РµС‚Р°Р»С–: {ex.Message}", LogType.ERROR);
-                MessageBox.Show($"РџРѕРјРёР»РєР°: {ex.Message}", "РџРѕРјРёР»РєР°", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = _logger?.LogAsync($"Помилка зміни ролі користувача ID:{_selectedUser.Id}. Деталі: {ex.Message}", LogType.ERROR);
+                MessageBox.Show($"Помилка: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // РњРµС‚РѕРґ РґР»СЏ РїР»Р°РІРЅРѕС— Р°РЅС–РјР°С†С–С— Р»С–РЅС–С— Сѓ РІРєР»Р°РґРєР°С… Р°РґРјС–РЅРєРё
+        // Метод для плавної анімації лінії у вкладках адмінки
         private void MoveIndicatorTo(UIElement target)
         {
             if (target == null || !target.IsVisible || !this.IsLoaded) return;
