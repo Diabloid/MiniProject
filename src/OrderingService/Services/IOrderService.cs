@@ -7,6 +7,7 @@ public interface IOrderService
 {
     Task<Result<OrderDto>> CreateOrderAsync(int userId, CreateOrderRequest request, string? idempotencyKey = null, CancellationToken ct = default);
     Task<Result<OrderDto>> GetOrderByIdAsync(int id, int currentUserId, bool isAdmin, CancellationToken ct = default);
+    Task<Result<UserGameOrderStatusDto>> GetUserGameOrderStatusAsync(int userId, int gameId, CancellationToken ct = default);
     Task<Result<PagedResult<OrderDto>>> GetUserOrdersPagedAsync(int userId, OrderQueryParameters parameters, CancellationToken ct = default);
     Task<Result<PagedResult<OrderDto>>> GetAllOrdersPagedAsync(OrderQueryParameters parameters, CancellationToken ct = default);
     Task<Result> CancelOrderAsync(int id, int currentUserId, bool isAdmin, CancellationToken ct = default);

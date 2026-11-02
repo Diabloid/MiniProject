@@ -128,6 +128,29 @@ public class OrderService : IOrderService
         return Result<OrderDto>.Success(MapToDto(order));
     }
 
+    public async Task<Result<UserGameOrderStatusDto>> GetUserGameOrderStatusAsync(int userId, int gameId, CancellationToken ct = default)
+    {
+        var order = await _repository.GetUserActiveOrderForGameAsync(userId, gameId, ct);
+        if (order == null)
+        {
+            return Result<UserGameOrderStatusDto>.Success(new UserGameOrderStatusDto
+            {
+                HasPurchased = false,
+                OrderId = null,
+                Status = null,
+                PurchaseDate = null
+            });
+        }
+
+        return Result<UserGameOrderStatusDto>.Success(new UserGameOrderStatusDto
+        {
+            HasPurchased = true,
+            OrderId = order.Id,
+            Status = order.Status.ToString(),
+            PurchaseDate = order.CreatedAt
+        });
+    }
+
     public async Task<Result<PagedResult<OrderDto>>> GetUserOrdersPagedAsync(
         int userId,
         OrderQueryParameters parameters,

@@ -1,0 +1,74 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: novagames-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: src/AuthService/Dockerfile
+    container_name: novagames-auth
+    depends_on:
+      - mysql
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=miniproject_auth;User=root;Password=rootpassword123;
+      - Jwt__Key=NovaGames_Microservices_SuperSecretKey_2026_Lab1_Authentication!#$
+      - Jwt__Issuer=NovaGames.AuthService
+      - Jwt__Audience=NovaGames.Clients
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: src/CatalogService/Dockerfile
+    container_name: novagames-catalog
+    depends_on:
+      - mysql
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=miniproject_catalog;User=root;Password=rootpassword123;
+      - Jwt__Key=NovaGames_Microservices_SuperSecretKey_2026_Lab1_Authentication!#$
+      - Jwt__Issuer=NovaGames.AuthService
+      - Jwt__Audience=NovaGames.Clients
+
+  ordering-service:
+    build:
+      context: .
+      dockerfile: src/OrderingService/Dockerfile
+    container_name: novagames-ordering
+    depends_on:
+      - mysql
+      - catalog-service
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=miniproject_ordering;User=root;Password=rootpassword123;
+      - Jwt__Key=NovaGames_Microservices_SuperSecretKey_2026_Lab1_Authentication!#$
+      - Jwt__Issuer=NovaGames.AuthService
+      - Jwt__Audience=NovaGames.Clients
+      - Services__Catalog=http://catalog-service:5002
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: src/ApiGateway/Dockerfile
+    container_name: novagames-gateway
+    depends_on:
+      - auth-service
+      - catalog-service
+      - ordering-service
+    ports:
+      - "5000:5000"
+    environment:
+      - Jwt__Key=NovaGames_Microservices_SuperSecretKey_2026_Lab1_Authentication!#$
+      - Jwt__Issuer=NovaGames.AuthService
+      - Jwt__Audience=NovaGames.Clients
+      - Services__Auth=http://auth-service:5001
+      - Services__Catalog=http://catalog-service:5002
+      - Services__Ordering=http://ordering-service:5003
+
+volumes:
+  mysql_data:

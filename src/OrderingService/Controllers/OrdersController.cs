@@ -30,6 +30,17 @@ public class OrdersController : ControllerBase
         return Ok(result.Value);
     }
 
+    [HttpGet("game-status/{gameId:int}")]
+    [Authorize]
+    [ProducesResponseType(typeof(UserGameOrderStatusDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetGameStatus(int gameId, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        var result = await _orderService.GetUserGameOrderStatusAsync(userId, gameId, ct);
+        return Ok(result.Value);
+    }
+
     [HttpGet("{id:int}")]
     [Authorize]
     [ProducesResponseType(typeof(OrderDto), StatusCodes.Status200OK)]
@@ -97,7 +108,6 @@ public class OrdersController : ControllerBase
     {
         var userId = GetCurrentUserId();
         var result = await _orderService.UpdateOrderAsync(id, userId, request, ct);
-
         if (!result.IsSuccess)
         {
             return StatusCode((int)result.StatusCode, new ProblemDetails
@@ -112,6 +122,7 @@ public class OrdersController : ControllerBase
         return Ok(result.Value);
     }
 
+    [HttpDelete("{id:int}")]
     [HttpPost("{id:int}/cancel")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -152,6 +163,12 @@ public class OrdersController : ControllerBase
     private int GetCurrentUserId()
     {
         var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(claim, out var id) ? id : 0;
+        if (int.TryParse(claim, out var id))
+            return id;
+
+        if (Request.Headers.TryGetValue("X-User-Id", out var headerVal) && int.TryParse(headerVal, out var headerId))
+            return headerId;
+
+        return 0;
     }
 }

@@ -30,6 +30,16 @@ public class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(o => o.IdempotencyKey == key, ct);
     }
 
+    public async Task<Order?> GetUserActiveOrderForGameAsync(int userId, int gameId, CancellationToken ct = default)
+    {
+        return await _context.Orders
+            .Include(o => o.Items)
+            .AsNoTracking()
+            .Where(o => o.UserId == userId && o.Items.Any(i => i.GameId == gameId) && o.Status != OrderStatus.Cancelled)
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+    }
+
     public async Task<PagedResult<Order>> GetPagedOrdersAsync(
         int? userId,
         int page,
