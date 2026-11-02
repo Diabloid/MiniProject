@@ -1,0 +1,26 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "userId": 1,
+      "status": "Completed",
+      "totalAmount": 1019.15,
+      "paymentMethod": "Card",
+      "orderDate": "2026-11-02T18:00:00Z",
+      "items": [
+        {
+          "id": 1,
+          "gameId": 1,
+          "title": "Cyberpunk 2077: Phantom Liberty",
+          "unitPrice": 1019.15,
+          "quantity": 1,
+          "subtotal": 1019.15
+        }
+      ]
+    }
+  ],
+  "page": 1,
+  "pageSize": 10,
+  "totalCount": 1,
+  "totalPages": 1
+}

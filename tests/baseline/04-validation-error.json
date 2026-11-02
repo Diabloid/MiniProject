@@ -1,0 +1,9 @@
+{
+  "title": "Bad Request",
+  "status": 400,
+  "errors": {
+    "Items[0].Quantity": [
+      "Кількість товару повинна бути не менше 1."
+    ]
+  }
+}
