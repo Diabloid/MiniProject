@@ -3,6 +3,7 @@
   <Folder Name="/docs/adr/">
     <File Path="0001-monolith-decomposition.md" />
     <File Path="0002-routing-gateway.md" />
+    <File Path="0003-operations-extraction.md" />
   </Folder>
   <Folder Name="/docs/diagrams/">
     <File Path="01-composition-diagram.md" />
@@ -16,11 +17,15 @@
     <Project Path="src/ApiGateway/ApiGateway.csproj" />
     <Project Path="src/AuthService/AuthService.csproj" />
     <Project Path="src/CatalogService/CatalogService.csproj" />
+    <Project Path="src/OrderingService/OrderingService.csproj" />
     <Project Path="src/Shared/MiniProject.Shared/MiniProject.Shared.csproj" />
   </Folder>
   <Folder Name="/src/Monolith/">
     <Project Path="src/Monolith/NovaGames.API/NovaGames.API.csproj" />
     <Project Path="src/Monolith/NovaGames.Core/NovaGames.Core.csproj" />
     <Project Path="src/Monolith/NovaGames.UI/NovaGames.UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Ordering.IntegrationTests/Ordering.IntegrationTests.csproj" />
   </Folder>
 </Solution>

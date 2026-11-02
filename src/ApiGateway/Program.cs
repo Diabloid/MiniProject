@@ -22,7 +22,7 @@ app.Use(async (context, next) =>
     <title>NovaGames API Gateway</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; margin: 0; }
-        .card { background: #1e293b; border-radius: 12px; padding: 24px; max-width: 700px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #334155; }
+        .card { background: #1e293b; border-radius: 12px; padding: 24px; max-width: 750px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #334155; }
         h1 { color: #38bdf8; margin-top: 0; }
         p { color: #94a3b8; font-size: 16px; }
         ul { list-style: none; padding: 0; }
@@ -36,7 +36,7 @@ app.Use(async (context, next) =>
 <body>
     <div class='card'>
         <h1>🎮 NovaGames API Gateway (Port 5000)</h1>
-        <p>Шлюз Ocelot успішно запущено. Оберіть документацію API для тестування:</p>
+        <p>Шлюз Ocelot успішно маршрутизує запити до мікросервісів:</p>
         <ul>
             <li>
                 <a href='http://localhost:5001/scalar/v1' target='_blank'>AuthService API (Scalar UI)</a>
@@ -45,6 +45,10 @@ app.Use(async (context, next) =>
             <li>
                 <a href='http://localhost:5002/scalar/v1' target='_blank'>CatalogService API (Scalar UI)</a>
                 <span class='badge'>Port 5002</span>
+            </li>
+            <li>
+                <a href='http://localhost:5003/scalar/v1' target='_blank'>OrderingService API (Scalar UI)</a>
+                <span class='badge'>Port 5003</span>
             </li>
             <li>
                 <a href='http://localhost:5042/swagger' target='_blank'>Monolith API (Swagger UI)</a>
@@ -56,11 +60,12 @@ app.Use(async (context, next) =>
             </li>
         </ul>
         <div class='code-block'>
-            Клієнтські запити через шлюз:<br/>
-            POST http://localhost:5000/api/v1/auth/register<br/>
-            POST http://localhost:5000/api/v1/auth/login<br/>
-            GET  http://localhost:5000/api/v1/catalog/items<br/>
-            GET  http://localhost:5000/api/v1/games
+            Клієнтські маршрути через єдиний шлюз:<br/>
+            POST /api/v1/auth/login ➔ AuthService (5001)<br/>
+            GET  /api/v1/catalog/items ➔ CatalogService (5002)<br/>
+            POST /api/v1/orders ➔ OrderingService (5003) [Idempotency-Key]<br/>
+            GET  /api/v1/orders ➔ OrderingService (5003)<br/>
+            ANY  /api/** ➔ Monolith (5042)
         </div>
     </div>
 </body>
