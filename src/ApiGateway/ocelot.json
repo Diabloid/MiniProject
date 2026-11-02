@@ -61,6 +61,30 @@
       ]
     },
     {
+      "UpstreamPathTemplate": "/api/v1/orders",
+      "UpstreamHttpMethod": [ "Get", "Post", "Options" ],
+      "DownstreamPathTemplate": "/api/v1/orders",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5003
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/orders/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "Options" ],
+      "DownstreamPathTemplate": "/api/v1/orders/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5003
+        }
+      ]
+    },
+    {
       "UpstreamPathTemplate": "/api/{everything}",
       "UpstreamHttpMethod": [ "Get", "Post", "Put", "Patch", "Delete", "Options" ],
       "DownstreamPathTemplate": "/api/{everything}",

@@ -1,0 +1,78 @@
+### Baseline Сценарій 1: Створення замовлення з коректними даними
+POST http://localhost:5000/api/v1/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Idempotency-Key: 7b9f3a1e-842c-4c2e-9d21-f8a12c3e4567
+
+{
+  "items": [
+    {
+      "gameId": 1,
+      "quantity": 1
+    }
+  ],
+  "paymentMethod": "Card",
+  "customerNotes": "Термінова доставка ліцензійного ключа"
+}
+
+### Baseline Сценарій 2: Створення без токена
+POST http://localhost:5000/api/v1/orders
+Content-Type: application/json
+
+{
+  "items": [{ "gameId": 1, "quantity": 1 }]
+}
+
+### Baseline Сценарій 3: Створення з неіснуючим ItemId
+POST http://localhost:5000/api/v1/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Idempotency-Key: 8c1e2f3a-953d-4d3f-ae32-09b23d4e5678
+
+{
+  "items": [{ "gameId": 99999, "quantity": 1 }]
+}
+
+### Baseline Сценарій 4: Створення з порушенням бізнес-правила (quantity <= 0)
+POST http://localhost:5000/api/v1/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "items": [{ "gameId": 1, "quantity": 0 }]
+}
+
+### Baseline Сценарій 5: Повтор запиту з тим самим Idempotency-Key
+POST http://localhost:5000/api/v1/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Idempotency-Key: 7b9f3a1e-842c-4c2e-9d21-f8a12c3e4567
+
+{
+  "items": [{ "gameId": 1, "quantity": 1 }]
+}
+
+### Baseline Сценарій 6: Отримання свого замовлення за ID
+GET http://localhost:5000/api/v1/orders/1
+Authorization: Bearer {{token}}
+
+### Baseline Сценарій 7: Спроба отримати чуже замовлення
+GET http://localhost:5000/api/v1/orders/999
+Authorization: Bearer {{token}}
+
+### Baseline Сценарій 8: Скасування замовлення
+POST http://localhost:5000/api/v1/orders/1/cancel
+Authorization: Bearer {{token}}
+
+### Baseline Сценарій 9: Каталог недоступний
+POST http://localhost:5000/api/v1/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "items": [{ "gameId": 1, "quantity": 1 }]
+}
+
+### Baseline Сценарій 10: Список своїх замовлень з пагінацією та фільтром
+GET http://localhost:5000/api/v1/orders?page=1&pageSize=10&status=Completed
+Authorization: Bearer {{token}}
