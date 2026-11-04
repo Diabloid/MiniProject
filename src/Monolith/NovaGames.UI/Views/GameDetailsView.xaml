@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="NovaGames.UI.Views.GameDetailsView"
+<UserControl x:Class="NovaGames.UI.Views.GameDetailsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="clr-namespace:MdXaml;assembly=MdXaml"
@@ -226,6 +226,14 @@
                                             <TextBlock Text="{Binding FinalPrice, StringFormat={}{0:N2} ₴}" FontSize="32" FontWeight="Bold" Foreground="#00ADEF" VerticalAlignment="Bottom"/>
                                         </StackPanel>
 
+                                        <!-- Банер часткової деградації (Лабораторна 3) -->
+                                        <Border x:Name="borderDegradation" Background="#33FF9800" BorderBrush="#FF9800" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,0,10" Visibility="Collapsed">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="⚠️ " FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="txtDegradationReason" Text="Сервіс замовлень тимчасово недоступний (Degradation mode)" Foreground="#FFCC80" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+
                                         <Grid Height="45" Margin="0,0,0,0">
                                             <Button x:Name="btnAddToCart" Content="ДОДАТИ В КОШИК" Click="BtnAddToCart_Click" Tag="{Binding}" FontSize="16">
                                                 <Button.Style>
@@ -243,7 +251,7 @@
                                                 </Button.Style>
                                             </Button>
 
-                                            <Button Content="В КОШИКУ" Click="BtnGoToCart_Click" Tag="{Binding}" FontSize="16">
+                                            <Button x:Name="btnGoToCart" Content="В КОШИКУ" Click="BtnGoToCart_Click" Tag="{Binding}" FontSize="16">
                                                 <Button.Style>
                                                     <Style TargetType="Button" BasedOn="{StaticResource ModernGrayButtonStyle}">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -259,7 +267,7 @@
                                                 </Button.Style>
                                             </Button>
 
-                                            <Button Content="В БІБЛІОТЕКУ" Click="BtnGoToLibrary_Click" Tag="{Binding}" FontSize="16">
+                                            <Button x:Name="btnGoToLibrary" Content="В БІБЛІОТЕКУ" Click="BtnGoToLibrary_Click" Tag="{Binding}" FontSize="16">
                                                 <Button.Style>
                                                     <Style TargetType="Button" BasedOn="{StaticResource ModernGrayButtonStyle}">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -271,6 +279,12 @@
                                                     </Style>
                                                 </Button.Style>
                                             </Button>
+
+                                            <!-- Кнопка часткової деградації, коли OrderingService офлайн -->
+                                            <Button x:Name="btnOrderingOffline" Content="СЕРВІС ЗАМОВЛЕНЬ ОФЛАЙН" IsEnabled="False" FontSize="14"
+                                                    Visibility="Collapsed"
+                                                    Style="{StaticResource ModernGrayButtonStyle}"
+                                                    Background="#332B14" Foreground="#FFA726" BorderBrush="#FF9800" BorderThickness="1"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>

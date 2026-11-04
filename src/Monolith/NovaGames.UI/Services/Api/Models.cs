@@ -76,6 +76,10 @@ public class ClientOrderDto
     public string? CustomerNotes { get; set; }
     public DateTime OrderDate { get; set; }
     public List<ClientOrderItemDto> Items { get; set; } = new();
+
+    public bool CanBeCancelled => !string.Equals(Status, "Cancelled", StringComparison.OrdinalIgnoreCase);
+    public string StatusBadgeColor => string.Equals(Status, "Cancelled", StringComparison.OrdinalIgnoreCase) ? "#757575" : "#00ADEF";
+    public string StatusDisplay => string.Equals(Status, "Cancelled", StringComparison.OrdinalIgnoreCase) ? "СКАСОВАНО" : Status.ToUpper();
 }
 
 public class ClientCreateOrderItemRequest

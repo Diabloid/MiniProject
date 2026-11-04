@@ -1,13 +1,16 @@
-using Microsoft.Extensions.DependencyInjection;
-using NovaGames.Core.Entities;
-using NovaGames.Core.Services;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using NovaGames.Core.Entities;
+using NovaGames.Core.Services;
+using NovaGames.UI.Services.Api;
 
 namespace NovaGames.UI.Services
 {
-    // Допоміжний клас для пакування даних логіну
     public class LoginRequest
     {
         [JsonPropertyName("email")]
@@ -17,27 +20,24 @@ namespace NovaGames.UI.Services
         public string Password { get; set; } = string.Empty;
     }
 
-    // Допоміжний клас для пакування даних реєстрації
     public class RegisterRequest
     {
+        [JsonPropertyName("username")]
+        public string Username { get; set; } = string.Empty;
+
         [JsonPropertyName("email")]
         public string Email { get; set; } = string.Empty;
-
-        [JsonPropertyName("displayName")]
-        public string Username { get; set; } = string.Empty;
 
         [JsonPropertyName("password")]
         public string Password { get; set; } = string.Empty;
     }
 
-    // Допоміжний клас для пакування даних оновлення токенів
     public class RefreshRequest
     {
         [JsonPropertyName("refreshToken")]
         public string RefreshToken { get; set; } = string.Empty;
     }
 
-    // DTO відповіді від AuthService
     public class RemoteAuthResponse
     {
         [JsonPropertyName("accessToken")]
@@ -58,7 +58,6 @@ namespace NovaGames.UI.Services
         public List<string> Roles { get; set; } = new();
     }
 
-    // Клас для сумісності з WPF вікнами
     public class AuthResponse
     {
         public User User { get; set; } = null!;
@@ -105,11 +104,29 @@ namespace NovaGames.UI.Services
                     }
                 }
 
+                if ((int)response.StatusCode == 429)
+                {
+                    int retrySeconds = 60;
+                    if (response.Headers.RetryAfter?.Delta.HasValue == true)
+                    {
+                        retrySeconds = (int)response.Headers.RetryAfter.Delta.Value.TotalSeconds;
+                    }
+                    else if (response.Headers.TryGetValues("Retry-After", out var vals) && int.TryParse(vals.FirstOrDefault(), out var parsed))
+                    {
+                        retrySeconds = parsed;
+                    }
+                    throw new RateLimitExceededException(retrySeconds);
+                }
+
                 return null;
+            }
+            catch (RateLimitExceededException)
+            {
+                throw;
             }
             catch (HttpRequestException)
             {
-                throw new System.Exception("Не вдалося підключитися до API Gateway (порт 5000). Перевірте підключення.");
+                throw new Exception("Не вдалося з'єднатися з API Gateway (порт 5000). Перевірте з'єднання.");
             }
         }
 
@@ -125,46 +142,37 @@ namespace NovaGames.UI.Services
             }
             catch (HttpRequestException)
             {
-                throw new System.Exception("Не вдалося підключитися до API Gateway (порт 5000). Перевірте підключення.");
+                throw new Exception("Не вдалося з'єднатися з API Gateway (порт 5000). Перевірте з'єднання.");
             }
         }
 
         public async Task<bool> RefreshTokensAsync()
         {
-            var session = App.AppHost!.Services.GetRequiredService<UserSession>();
-            if (string.IsNullOrEmpty(session.RefreshToken))
-                return false;
-
-            var request = new RefreshRequest
-            {
-                RefreshToken = session.RefreshToken
-            };
-
             try
             {
-                var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/refresh-token", request);
+                var tokenStorage = new TokenStorageService();
+                var (_, refreshToken) = tokenStorage.GetTokens();
+
+                if (string.IsNullOrEmpty(refreshToken)) return false;
+
+                var request = new RefreshRequest { RefreshToken = refreshToken };
+                var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/refresh", request);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<RemoteAuthResponse>();
-                    if (result != null)
+                    var remote = await response.Content.ReadFromJsonAsync<RemoteAuthResponse>();
+                    if (remote != null)
                     {
-                        session.Token = result.AccessToken;
-                        session.RefreshToken = result.RefreshToken;
-
-                        var tokenStorage = App.AppHost!.Services.GetRequiredService<TokenStorageService>();
-                        tokenStorage.SaveTokens(result.AccessToken, result.RefreshToken);
-
+                        tokenStorage.SaveTokens(remote.AccessToken, remote.RefreshToken);
                         return true;
                     }
                 }
+                return false;
             }
             catch
             {
                 return false;
             }
-
-            return false;
         }
     }
 }

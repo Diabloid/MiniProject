@@ -1,87 +1,53 @@
+п»їusing System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using NovaGames.Core.Entities;
 using NovaGames.Core.Services;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
+using NovaGames.UI.Services.Api;
 
 namespace NovaGames.UI.Services
 {
     public class CartApiService
     {
-        private readonly HttpClient _httpClient;
         private readonly UserSession _userSession;
-        private const string BaseUrl = "http://localhost:5000/api/v1/cart";
+        private readonly IGatewayApiClient _gatewayClient;
+        private readonly GameApiService _gameApiService;
 
-        // КЕШ КОШИКА
+        private readonly List<Game> _cartGames = new();
         public HashSet<int> CartGameIds { get; private set; } = new HashSet<int>();
 
-        public CartApiService(UserSession userSession)
-        {
-            _httpClient = new HttpClient();
-            _userSession = userSession;
-        }
+        public event Action<int>? CartCountChanged;
 
-        private void SetAuthHeader()
+        public CartApiService(UserSession userSession, IGatewayApiClient gatewayClient, GameApiService gameApiService)
         {
-            if (!string.IsNullOrEmpty(_userSession.Token))
-                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _userSession.Token);
+            _userSession = userSession;
+            _gatewayClient = gatewayClient;
+            _gameApiService = gameApiService;
         }
 
         public async Task LoadMyCartIdsAsync()
         {
-            SetAuthHeader();
-            try
-            {
-                var response = await _httpClient.GetAsync($"{BaseUrl}/my-cart-ids");
-                if (response.IsSuccessStatusCode)
-                {
-                    var ids = await response.Content.ReadFromJsonAsync<List<int>>();
-                    if (ids != null)
-                    {
-                        CartGameIds = new HashSet<int>(ids);
-                        CartCountChanged?.Invoke(CartGameIds.Count);
-                    }
-                }
-            }
-            catch {}
+            // РЈ РєР»С–С”РЅС‚СЃСЊРєРѕРјСѓ СЂС–С€РµРЅРЅС– РєРѕС€РёРє СЃРёРЅС…СЂРѕРЅС–Р·РѕРІР°РЅРёР№ Сѓ РїР°Рј'СЏС‚С–
+            CartGameIds = new HashSet<int>(_cartGames.Select(g => g.Id));
+            CartCountChanged?.Invoke(CartGameIds.Count);
+            await Task.CompletedTask;
         }
-
-        // ПОДІЯ ДЛЯ UI: викликається, коли кількість товарів змінилася
-        public event Action<int>? CartCountChanged;
 
         public async Task<List<Game>> GetCartGamesAsync()
         {
-            SetAuthHeader();
-            try
-            {
-                var response = await _httpClient.GetAsync($"{BaseUrl}/my-items");
-                if (response.IsSuccessStatusCode)
-                {
-                    // Використовуємо стандартний парсер, як у GameApiService
-                    var games = await response.Content.ReadFromJsonAsync<List<Game>>();
-                    if (games != null)
-                    {
-                        CartGameIds = new HashSet<int>(games.Select(g => g.Id));
-                        CartCountChanged?.Invoke(CartGameIds.Count);
-                        return games;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Помилка завантаження кошика: {ex.Message}");
-            }
-            return new List<Game>();
+            return await Task.FromResult(_cartGames.ToList());
         }
 
-        // Метод додавання в кошик
         public async Task<bool> AddToCartAsync(int productId)
         {
-            SetAuthHeader();
-            var response = await _httpClient.PostAsync($"{BaseUrl}/{productId}", null);
-            if (response.IsSuccessStatusCode)
+            if (CartGameIds.Contains(productId)) return true;
+
+            var game = await _gameApiService.GetGameByIdAsync(productId);
+            if (game != null)
             {
+                _cartGames.Add(game);
                 CartGameIds.Add(productId);
                 CartCountChanged?.Invoke(CartGameIds.Count);
                 return true;
@@ -91,48 +57,64 @@ namespace NovaGames.UI.Services
 
         public async Task<bool> RemoveFromCartAsync(int productId)
         {
-            SetAuthHeader();
-            var response = await _httpClient.DeleteAsync($"{BaseUrl}/{productId}");
-            if (response.IsSuccessStatusCode)
+            var existing = _cartGames.FirstOrDefault(g => g.Id == productId);
+            if (existing != null)
             {
-                CartGameIds.Remove(productId);
-                CartCountChanged?.Invoke(CartGameIds.Count); // Оновлюємо бейдж у реальному часі
-                return true;
+                _cartGames.Remove(existing);
             }
-            return false;
+            CartGameIds.Remove(productId);
+            CartCountChanged?.Invoke(CartGameIds.Count);
+            return await Task.FromResult(true);
         }
 
-        // Метод оформлення замовлення (Оплата гаманцем)
-        // Метод оформлення замовлення (Оплата гаманцем або карткою)
         public async Task<(bool Success, string ErrorMessage, CheckoutResponse? Data)> CheckoutAsync(CheckoutRequest request)
         {
-            SetAuthHeader();
             try
             {
-                // Відправляємо наш request у тілі POST-запиту!
-                var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/checkout", request);
-
-                if (response.IsSuccessStatusCode)
+                if (_cartGames.Count == 0)
                 {
-                    var data = await response.Content.ReadFromJsonAsync<CheckoutResponse>();
+                    return (false, "РљРѕС€РёРє РїРѕСЂРѕР¶РЅС–Р№. Р”РѕРґР°Р№С‚Рµ РіСЂСѓ РїРµСЂРµРґ РѕС„РѕСЂРјР»РµРЅРЅСЏРј.", null);
+                }
+
+                // РЎС‚РІРѕСЂРµРЅРЅСЏ Р·Р°РјРѕРІР»РµРЅРЅСЏ РІ OrderingService С‡РµСЂРµР· API Gateway Р· Idempotency-Key
+                var createOrderRequest = new ClientCreateOrderRequest
+                {
+                    PaymentMethod = request.PaymentMethod,
+                    CustomerNotes = $"РћРїР»Р°С‚Р° С‡РµСЂРµР· {request.PaymentMethod} Р· NovaGames Client",
+                    Items = _cartGames.Select(g => new ClientCreateOrderItemRequest
+                    {
+                        GameId = g.Id,
+                        Quantity = 1
+                    }).ToList()
+                };
+
+                var (success, error, order) = await _gatewayClient.CreateOrderAsync(createOrderRequest);
+
+                if (success && order != null)
+                {
+                    var addedIds = _cartGames.Select(g => g.Id).ToList();
+                    _cartGames.Clear();
                     CartGameIds.Clear();
                     CartCountChanged?.Invoke(0);
-                    return (true, string.Empty, data);
+
+                    return (true, string.Empty, new CheckoutResponse
+                    {
+                        NewBalance = 0,
+                        AddedToLibraryIds = addedIds
+                    });
                 }
                 else
                 {
-                    var errorMsg = await response.Content.ReadAsStringAsync();
-                    return (false, errorMsg, null);
+                    return (false, error ?? "РќРµ РІРґР°Р»РѕСЃСЏ СЃС‚РІРѕСЂРёС‚Рё Р·Р°РјРѕРІР»РµРЅРЅСЏ РІ OrderingService.", null);
                 }
             }
             catch (Exception ex)
             {
-                return (false, $"Помилка з'єднання: {ex.Message}", null);
+                return (false, $"РџРѕРјРёР»РєР° РѕС„РѕСЂРјР»РµРЅРЅСЏ: {ex.Message}", null);
             }
         }
     }
 
-    // Модель відповіді після успішної покупки
     public class CheckoutResponse
     {
         public decimal NewBalance { get; set; }
@@ -141,9 +123,7 @@ namespace NovaGames.UI.Services
 
     public class CheckoutRequest
     {
-        public string PaymentMethod { get; set; } = "Wallet"; // "Wallet" або "Card"
-
-        // Дані картки (потрібні тільки якщо PaymentMethod == "Card")
+        public string PaymentMethod { get; set; } = "Wallet";
         public string CardNumber { get; set; } = string.Empty;
         public string ExpiryDate { get; set; } = string.Empty;
         public string Cvv { get; set; } = string.Empty;

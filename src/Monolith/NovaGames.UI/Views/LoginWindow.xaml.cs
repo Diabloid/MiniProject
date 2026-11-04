@@ -1,22 +1,28 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using NovaGames.Core.Exceptions;
+﻿using System;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using NovaGames.Core.Interfaces;
 using NovaGames.Core.Models;
 using NovaGames.Core.Services;
 using NovaGames.UI.Services;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media;
+using NovaGames.UI.Services.Api;
 
 namespace NovaGames.UI.Views
 {
     public partial class LoginWindow : Window
     {
-        private readonly AuthApiService _authService;    // Додано для роботи з користувачами
-        private readonly ILogger _logger;                // Додано для логування
-        private readonly UserSession _userSession;       // Додано для сесії користувача
+        private readonly AuthApiService _authService;
+        private readonly ILogger _logger;
+        private readonly UserSession _userSession;
         private readonly TokenStorageService _tokenStorage;
         private readonly INavigationService _navigationService;
+
+        private DispatcherTimer? _countdownTimer;
+        private int _remainingSeconds;
 
         public LoginWindow(AuthApiService authService, ILogger logger, UserSession session, TokenStorageService tokenStorage, INavigationService navigationService)
         {
@@ -40,19 +46,15 @@ namespace NovaGames.UI.Views
             int dotCount = 0;
             while (_isProcessing)
             {
-                btnLogin.Content = $"ЗАЧЕКАЙТЕ{new string('.', dotCount)}";
+                btnLogin.Content = $"Вхід{new string('.', dotCount)}";
                 dotCount = (dotCount + 1) % 4;
                 await Task.Delay(400);
             }
         }
 
-        // --- ЛОГІКА UI ---
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // 1. Очищення фокусу з полів вводу
             Keyboard.ClearFocus();
-
-            // 2. Логіка перетягування вікна
             if (e.ChangedButton == MouseButton.Left)
                 this.DragMove();
         }
@@ -62,19 +64,16 @@ namespace NovaGames.UI.Views
             this.Close();
         }
 
-        // --- ЛОГІКА АВТОРИЗАЦІЇ ---
-
         private async void BtnLogin_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Скидаємо помилки
                 lblError.Visibility = Visibility.Hidden;
 
                 if (_authService == null)
                 {
-                    _ = _logger?.LogAsync("КРИТИЧНО: AuthApiService не був ініціалізований (DI failed).", LogType.ERROR);
-                    ShowMessage("Сервіс даних недоступний.", true);
+                    _ = _logger?.LogAsync("Помилка: AuthApiService не знайдено (DI failed).", LogType.ERROR);
+                    ShowMessage("Сервіс авторизації недоступний.", true);
                     return;
                 }
 
@@ -85,24 +84,22 @@ namespace NovaGames.UI.Views
                 string username = txtUsername.Text;
                 string password = ActualPassword;
 
-                // 1. Валідація вводу
                 if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 {
                     ShowMessage("Введіть ім'я користувача та пароль.", true);
                     _isProcessing = false;
                     btnLogin.IsEnabled = true;
-                    btnLogin.Content = "УВІЙТИ";
+                    btnLogin.Content = "Увійти";
                     return;
                 }
 
-                // 2. Спроба входу
                 var authResult = await _authService.AuthenticateAsync(username, password);
 
                 if (authResult != null && authResult.User != null)
                 {
                     _ = _logger?.LogAsync($"Користувач успішно увійшов: {username}", LogType.INFO);
                     ShowMessage("Успішний вхід! Завантаження...", false);
-                    await Task.Delay(1500);
+                    await Task.Delay(800);
 
                     if (chkRememberMe.IsChecked == true)
                     {
@@ -116,11 +113,14 @@ namespace NovaGames.UI.Views
                 }
                 else
                 {
-                    _ = _logger?.LogAsync($"Невдала спроба входу для логіну: {username}", LogType.WARNING);
+                    _ = _logger?.LogAsync($"Невірна спроба входу для: {username}", LogType.WARNING);
                     ShowMessage("Невірне ім'я користувача або пароль.", true);
                 }
             }
-            // 3. Обробка помилок
+            catch (RateLimitExceededException ex)
+            {
+                StartRateLimitCountdown(ex.RetryAfterSeconds);
+            }
             catch (Exception ex)
             {
                 ShowMessage(ex.Message, true);
@@ -128,24 +128,54 @@ namespace NovaGames.UI.Views
             }
             finally
             {
-                if (btnLogin.IsEnabled == false && lblError.Foreground is SolidColorBrush brush && brush.Color != (Color)ColorConverter.ConvertFromString("#00E676"))
+                if (_countdownTimer == null || !_countdownTimer.IsEnabled)
                 {
-                    _isProcessing = false;
-                    btnLogin.IsEnabled = true;
-                    btnLogin.Content = "УВІЙТИ";
+                    if (btnLogin.IsEnabled == false && lblError.Foreground is SolidColorBrush brush && brush.Color != (Color)ColorConverter.ConvertFromString("#00E676"))
+                    {
+                        _isProcessing = false;
+                        btnLogin.IsEnabled = true;
+                        btnLogin.Content = "Увійти";
+                    }
                 }
             }
         }
 
+        private void StartRateLimitCountdown(int seconds)
+        {
+            _remainingSeconds = seconds > 0 ? seconds : 60;
+            _isProcessing = false;
+            btnLogin.IsEnabled = false;
+
+            _countdownTimer?.Stop();
+            _countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _countdownTimer.Tick += (s, e) =>
+            {
+                _remainingSeconds--;
+                if (_remainingSeconds <= 0)
+                {
+                    _countdownTimer.Stop();
+                    btnLogin.IsEnabled = true;
+                    btnLogin.Content = "Увійти";
+                    lblError.Visibility = Visibility.Hidden;
+                }
+                else
+                {
+                    ShowMessage($"🚫 Забагато спроб входу! Зачекайте {_remainingSeconds} с.", true);
+                    btnLogin.Content = $"Блокування ({_remainingSeconds}с)";
+                }
+            };
+
+            ShowMessage($"🚫 Забагато спроб входу! Зачекайте {_remainingSeconds} с.", true);
+            btnLogin.Content = $"Блокування ({_remainingSeconds}с)";
+            _countdownTimer.Start();
+        }
+
         private void BtnRegister_Click(object sender, RoutedEventArgs e)
         {
-
             if (_authService == null) return;
-
             _navigationService.NavigateTo<RegisterWindow>(this);
         }
 
-        // Допоміжний метод для виводу повідомлень користувачу
         private void ShowMessage(string message, bool isError)
         {
             lblError.Text = message;
@@ -155,7 +185,6 @@ namespace NovaGames.UI.Views
             lblError.Visibility = Visibility.Visible;
         }
 
-        // Допоміжний метод для перемикання видимості пароля
         private void BtnTogglePassword_Click(object sender, RoutedEventArgs e)
         {
             if (btnTogglePassword.IsChecked == true)
@@ -172,20 +201,15 @@ namespace NovaGames.UI.Views
             }
         }
 
-        // Допоміжний метод для обробки натискання клавіш
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            // 1. Оновлюємо статус Caps Lock при кожному натисканні будь-якої клавіші
             CheckCapsLock();
-
-            // 2. Якщо натиснуто Enter і кнопка входу не заблокована - логінимось
             if (e.Key == Key.Enter && btnLogin.IsEnabled)
             {
                 BtnLogin_Click(this, new RoutedEventArgs());
             }
         }
 
-        // Допоміжний метод для перевірки статусу Caps Lock
         private void CheckCapsLock()
         {
             lblCapsLock.Visibility = Keyboard.IsKeyToggled(Key.CapsLock) ? Visibility.Visible : Visibility.Hidden;

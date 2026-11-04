@@ -1,73 +1,60 @@
-using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using NovaGames.Core.Services;
 
 namespace NovaGames.UI.Services.Api;
 
 public class GatewayApiClient : IGatewayApiClient
 {
     private readonly HttpClient _httpClient;
-    private readonly UserSession _userSession;
-    private readonly TokenStorageService _tokenStorage;
+    private readonly GatewayConfig _config;
 
-    public GatewayApiClient(
-        HttpClient httpClient,
-        UserSession userSession,
-        TokenStorageService tokenStorage)
+    public GatewayApiClient(HttpClient httpClient, GatewayConfig config)
     {
         _httpClient = httpClient;
-        _userSession = userSession;
-        _tokenStorage = tokenStorage;
+        _config = config;
     }
 
-    public async Task<(bool Success, string? ErrorMessage, ClientAuthResponse? Data)> LoginAsync(
-        string email,
-        string password,
-        CancellationToken ct = default)
+    public GatewayApiClient(HttpClient httpClient, NovaGames.Core.Services.UserSession? session = null, TokenStorageService? tokenStorage = null)
+        : this(httpClient, new GatewayConfig())
     {
+    }
+
+    public async Task<(bool Success, string? ErrorMessage, ClientAuthResponse? Data)> LoginAsync(string email, string password, CancellationToken ct = default)
+    {
+        var body = new ClientLoginRequest { Email = email, Password = password };
         try
         {
-            var req = new ClientLoginRequest { Email = email.Trim(), Password = password };
-            var response = await _httpClient.PostAsJsonAsync("/api/v1/auth/login", req, ct);
-
+            var response = await _httpClient.PostAsJsonAsync("/api/v1/auth/login", body, ct);
             if (response.IsSuccessStatusCode)
             {
                 var data = await response.Content.ReadFromJsonAsync<ClientAuthResponse>(cancellationToken: ct);
-                if (data != null)
+                if (data != null && !string.IsNullOrEmpty(data.AccessToken))
                 {
-                    _userSession.Token = data.AccessToken;
-                    _userSession.RefreshToken = data.RefreshToken;
-                    _tokenStorage.SaveTokens(data.AccessToken, data.RefreshToken);
-                    return (true, null, data);
+                    _config.AccessToken = data.AccessToken;
+                    _config.RefreshToken = data.RefreshToken;
                 }
+                return (true, null, data);
             }
 
             var problem = await ParseProblemDetailsAsync(response, ct);
-            var error = problem?.Detail ?? problem?.Title ?? "Невірний email або пароль.";
-            return (false, error, null);
+            var err = problem?.Detail ?? problem?.Title ?? $"Помилка входу (HTTP {(int)response.StatusCode})";
+            return (false, err, null);
         }
         catch (RateLimitExceededException ex)
-        {
-            return (false, $"Забагато спроб входу. Зачекайте {ex.RetryAfterSeconds} с перед повтором.", null);
-        }
-        catch (ApiException ex)
         {
             return (false, ex.Message, null);
         }
         catch (Exception ex)
         {
-            return (false, "Помилка зв'язку зі шлюзом. Перевірте, чи запущено API Gateway (порт 5000).", null);
+            return (false, $"Не вдалося підключитися до сервера: {ex.Message}", null);
         }
     }
 
     public Task LogoutAsync()
     {
-        _userSession.Token = string.Empty;
-        _userSession.RefreshToken = string.Empty;
-        _userSession.CurrentUser = null;
-        _tokenStorage.ClearToken();
+        _config.ClearTokens();
         return Task.CompletedTask;
     }
 
@@ -78,28 +65,17 @@ public class GatewayApiClient : IGatewayApiClient
         int? categoryId = null,
         CancellationToken ct = default)
     {
-        var url = $"/api/v1/games?page={page}&pageSize={pageSize}";
+        var query = $"?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrWhiteSpace(search))
-        {
-            url += $"&search={Uri.EscapeDataString(search.Trim())}";
-        }
+            query += $"&search={Uri.EscapeDataString(search)}";
         if (categoryId.HasValue)
-        {
-            url += $"&categoryId={categoryId.Value}";
-        }
+            query += $"&categoryId={categoryId.Value}";
 
-        try
+        var response = await _httpClient.GetAsync($"/api/v1/catalog/items{query}", ct);
+        if (response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.GetAsync(url, ct);
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<ClientPagedResult<ClientGameDto>>(cancellationToken: ct);
-                return result ?? new ClientPagedResult<ClientGameDto>();
-            }
-        }
-        catch (Exception)
-        {
-            // Повертаємо порожній список при збої
+            var paged = await response.Content.ReadFromJsonAsync<ClientPagedResult<ClientGameDto>>(cancellationToken: ct);
+            return paged ?? new ClientPagedResult<ClientGameDto>();
         }
 
         return new ClientPagedResult<ClientGameDto>();
@@ -107,17 +83,10 @@ public class GatewayApiClient : IGatewayApiClient
 
     public async Task<ClientGameStoreDetailsDto?> GetGameDetailsAsync(int gameId, CancellationToken ct = default)
     {
-        try
+        var response = await _httpClient.GetAsync($"/api/v1/store/game-details/{gameId}", ct);
+        if (response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.GetAsync($"/api/v1/store/game-details/{gameId}", ct);
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadFromJsonAsync<ClientGameStoreDetailsDto>(cancellationToken: ct);
-            }
-        }
-        catch (Exception)
-        {
-            // У разі помилки віддаємо null для переходу екрана в стан Error
+            return await response.Content.ReadFromJsonAsync<ClientGameStoreDetailsDto>(cancellationToken: ct);
         }
 
         return null;
@@ -130,8 +99,6 @@ public class GatewayApiClient : IGatewayApiClient
         string? idempotencyKey = null,
         CancellationToken ct = default)
     {
-        idempotencyKey ??= Guid.NewGuid().ToString();
-
         var orderRequest = new ClientCreateOrderRequest
         {
             PaymentMethod = paymentMethod,
@@ -141,6 +108,16 @@ public class GatewayApiClient : IGatewayApiClient
                 new() { GameId = gameId, Quantity = 1 }
             }
         };
+
+        return await CreateOrderAsync(orderRequest, idempotencyKey, ct);
+    }
+
+    public async Task<(bool Success, string? ErrorMessage, ClientOrderDto? Order)> CreateOrderAsync(
+        ClientCreateOrderRequest orderRequest,
+        string? idempotencyKey = null,
+        CancellationToken ct = default)
+    {
+        idempotencyKey ??= Guid.NewGuid().ToString();
 
         var requestMsg = new HttpRequestMessage(HttpMethod.Post, "/api/v1/orders")
         {
@@ -164,37 +141,29 @@ public class GatewayApiClient : IGatewayApiClient
                 return (false, validationMsg, null);
             }
 
-            var err = problem?.Detail ?? problem?.Title ?? $"Помилка оформлення (HTTP {(int)response.StatusCode})";
+            var err = problem?.Detail ?? problem?.Title ?? $"Помилка створення замовлення (HTTP {(int)response.StatusCode})";
             return (false, err, null);
         }
         catch (RateLimitExceededException ex)
-        {
-            return (false, $"Перевищено ліміт запитів. Зачекайте {ex.RetryAfterSeconds} с.", null);
-        }
-        catch (ApiException ex)
         {
             return (false, ex.Message, null);
         }
         catch (Exception ex)
         {
-            return (false, "Не вдалося з'єднатися зі шлюзом для створення замовлення.", null);
+            return (false, $"Помилка мережі при оформленні замовлення: {ex.Message}", null);
         }
     }
 
-    public async Task<ClientPagedResult<ClientOrderDto>> GetMyOrdersAsync(int page = 1, int pageSize = 10, CancellationToken ct = default)
+    public async Task<ClientPagedResult<ClientOrderDto>> GetMyOrdersAsync(
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken ct = default)
     {
-        try
+        var response = await _httpClient.GetAsync($"/api/v1/orders/my-orders?page={page}&pageSize={pageSize}", ct);
+        if (response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.GetAsync($"/api/v1/orders?page={page}&pageSize={pageSize}", ct);
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<ClientPagedResult<ClientOrderDto>>(cancellationToken: ct);
-                return result ?? new ClientPagedResult<ClientOrderDto>();
-            }
-        }
-        catch (Exception)
-        {
-            // Помилка обробляється клієнтським екраном
+            var paged = await response.Content.ReadFromJsonAsync<ClientPagedResult<ClientOrderDto>>(cancellationToken: ct);
+            return paged ?? new ClientPagedResult<ClientOrderDto>();
         }
 
         return new ClientPagedResult<ClientOrderDto>();
@@ -211,11 +180,16 @@ public class GatewayApiClient : IGatewayApiClient
             }
 
             var problem = await ParseProblemDetailsAsync(response, ct);
-            return (false, problem?.Detail ?? "Не вдалося скасувати замовлення.");
+            var err = problem?.Detail ?? problem?.Title ?? $"Не вдалося скасувати замовлення (HTTP {(int)response.StatusCode})";
+            return (false, err);
+        }
+        catch (RateLimitExceededException ex)
+        {
+            return (false, ex.Message);
         }
         catch (Exception ex)
         {
-            return (false, "Помилка зв'язку зі шлюзом.");
+            return (false, $"Помилка запиту: {ex.Message}");
         }
     }
 

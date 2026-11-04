@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using NovaGames.UI.Services.Api;
+using Microsoft.Extensions.DependencyInjection;
 using NovaGames.Core.Entities;
 using NovaGames.Core.Interfaces;
 using NovaGames.Core.Models;
@@ -23,6 +24,7 @@ namespace NovaGames.UI.Views
         private readonly UserSession _userSession;
         private readonly UserApiService _userApiService;
         private readonly CartApiService _cartService;
+        private readonly IGatewayApiClient _gatewayClient;
         private readonly ILogger _logger;
         private Game? _currentGame;
 
@@ -43,6 +45,7 @@ namespace NovaGames.UI.Views
             _userSession = App.AppHost!.Services.GetRequiredService<UserSession>();
             _userApiService = App.AppHost!.Services.GetRequiredService<UserApiService>();
             _cartService = App.AppHost!.Services.GetRequiredService<CartApiService>();
+            _gatewayClient = App.AppHost!.Services.GetRequiredService<IGatewayApiClient>();
             _logger = App.AppHost!.Services.GetRequiredService<ILogger>();
             _gameApiService = App.AppHost!.Services.GetRequiredService<GameApiService>();
             listReviews.ItemsSource = ReviewsList;
@@ -77,6 +80,13 @@ namespace NovaGames.UI.Views
                 _slideshowTimer?.Stop();                // ЗУПИНЯЄМО ТАЙМЕР СТАРОЇ ГРИ
 
                 // 1. Отримуємо свіжі дані з сервера
+                ClientGameStoreDetailsDto? storeDetails = null;
+                try
+                {
+                    storeDetails = await _gatewayClient.GetGameDetailsAsync(gameId);
+                }
+                catch { }
+
                 _currentGame = await _gameService.GetGameByIdAsync(gameId);
 
                 if (_currentGame == null)
@@ -175,6 +185,43 @@ namespace NovaGames.UI.Views
                         txtDuration.Text = $"Тривалість: {sg.DurationMonths} міс.";
                         txtAutoRenew.Text = sg.IsAutoRenew ? "Автоподовження: Увімкнено" : "Автоподовження: Вимкнено";
                         break;
+                }
+
+                // 6. Обробка статусу замовлення та деградації з API Gateway (Composite API - Лабораторна 3)
+                if (storeDetails?.UserStatus != null)
+                {
+                    if (storeDetails.UserStatus.HasPurchased)
+                    {
+                        _currentGame.IsOwned = true;
+                    }
+
+                    if (!storeDetails.UserStatus.IsAvailable)
+                    {
+                        borderDegradation.Visibility = Visibility.Visible;
+                        txtDegradationReason.Text = string.IsNullOrWhiteSpace(storeDetails.UserStatus.Message)
+                            ? "Сервіс замовлень тимчасово недоступний (Graceful degradation)"
+                            : storeDetails.UserStatus.Message;
+                        btnAddToCart.Visibility = Visibility.Collapsed;
+                        btnGoToCart.Visibility = Visibility.Collapsed;
+                        btnGoToLibrary.Visibility = Visibility.Collapsed;
+                        btnOrderingOffline.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        borderDegradation.Visibility = Visibility.Collapsed;
+                        btnOrderingOffline.Visibility = Visibility.Collapsed;
+                        btnAddToCart.ClearValue(UIElement.VisibilityProperty);
+                        btnGoToCart.ClearValue(UIElement.VisibilityProperty);
+                        btnGoToLibrary.ClearValue(UIElement.VisibilityProperty);
+                    }
+                }
+                else
+                {
+                    borderDegradation.Visibility = Visibility.Collapsed;
+                    btnOrderingOffline.Visibility = Visibility.Collapsed;
+                    btnAddToCart.ClearValue(UIElement.VisibilityProperty);
+                    btnGoToCart.ClearValue(UIElement.VisibilityProperty);
+                    btnGoToLibrary.ClearValue(UIElement.VisibilityProperty);
                 }
 
                 MainGrid.Visibility = Visibility.Visible;

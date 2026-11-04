@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Презентація: NovaGames Microservices</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0b0f19; color: #f1f5f9; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .slide-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .slide { display: none; max-width: 1000px; width: 100%; background: #131b2e; border: 1px solid #1e293b; border-radius: 16px; padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); animation: fadeIn 0.3s ease-in-out; }
+        .slide.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        h1 { color: #38bdf8; font-size: 2.2rem; margin-bottom: 12px; border-bottom: 2px solid #2563eb; padding-bottom: 8px; }
+        h2 { color: #93c5fd; font-size: 1.4rem; margin-bottom: 20px; font-weight: 500; }
+        p { color: #cbd5e1; font-size: 1.1rem; line-height: 1.6; margin-bottom: 16px; }
+        ul { list-style: none; margin-bottom: 20px; }
+        li { position: relative; padding-left: 28px; margin-bottom: 12px; font-size: 1.05rem; line-height: 1.5; color: #e2e8f0; }
+        li::before { content: "▹"; position: absolute; left: 0; color: #38bdf8; font-size: 1.3rem; line-height: 1; }
+        .badge { display: inline-block; background: #1e3a8a; color: #93c5fd; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; margin-right: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }
+        .box { background: #1e293b; border-radius: 10px; padding: 18px; border-left: 4px solid #38bdf8; }
+        .box h3 { color: #38bdf8; margin-bottom: 8px; font-size: 1.15rem; }
+        .box p, .box li { font-size: 0.95rem; }
+        .nav-bar { background: #0f172a; border-top: 1px solid #1e293b; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { background: #2563eb; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+        .btn:hover { background: #1d4ed8; }
+        .btn:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+        .counter { color: #94a3b8; font-weight: 600; font-size: 1rem; }
+        .accent { color: #f43f5e; font-weight: bold; }
+        .green { color: #10b981; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="slide-container">
+    <!-- Слайд 1 -->
+    <div class="slide active">
+        <span class="badge">Слайд 1 / 8</span>
+        <h1>Цифрова дистрибуція ігор NovaGames</h1>
+        <h2>Міграція монолітного інтернет-магазину на мікросервісну архітектуру</h2>
+        <div class="grid">
+            <div class="box">
+                <h3>📌 Про проєкт</h3>
+                <p>Повномасштабна декомпозиція системи за патерном <b>Strangler Fig</b> із забезпеченням автономності сервісів, ізоляції баз даних та єдиної точки входу.</p>
+            </div>
+            <div class="box">
+                <h3>🛠 Технологічний стек</h3>
+                <ul>
+                    <li><b>Бекенд:</b> .NET 10, C#, ASP.NET Core</li>
+                    <li><b>Шлюз:</b> Ocelot API Gateway (Порт 5000)</li>
+                    <li><b>Бази даних:</b> MySQL 8.0 (Database-per-Service)</li>
+                    <li><b>Клієнт:</b> WPF Desktop (.NET 10)</li>
+                    <li><b>Тести:</b> 20/20 тестів (xUnit, Moq, Integration)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Слайд 2 -->
+    <div class="slide">
+        <span class="badge">Слайд 2 / 8</span>
+        <h1>Вихідний моноліт та передумови декомпозиції</h1>
+        <h2>Чому ми вирішили розділити монолітну систему?</h2>
+        <div class="grid">
+            <div class="box">
+                <h3>🏛 Що було (Моноліт на 5042)</h3>
+                <ul>
+                    <li>Усі модулі в єдиному процесі;</li>
+                    <li>Спільна база <code>novagames_monolith</code>;</li>
+                    <li>Жорсткі Foreign Keys між користувачами, іграми та чеками замовлень.</li>
+                </ul>
+            </div>
+            <div class="box">
+                <h3>⚠️ Проблеми моноліту</h3>
+                <ul>
+                    <li><span class="accent">Single Point of Failure:</span> Падіння модуля оформлення чи аналітики блокувало весь магазин;</li>
+                    <li><span class="accent">Нерівномірне навантаження:</span> Каталог переглядають 95%, купують 5% — масштабувати доводилося все разом;</li>
+                    <li><span class="accent">High Coupling:</span> Будь-яка зміна схеми БД могла зламати сусідній функціонал.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Слайд 3 -->
+    <div class="slide">
+        <span class="badge">Слайд 3 / 8</span>
+        <h1>Цільова мікросервісна архітектура</h1>
+        <h2>Топологія системи та ізоляція відповідальності</h2>
+        <ul>
+            <li><b>Ocelot API Gateway (5000):</b> Single Entry Point, маршрутизація, Rate Limiting, Composite API, Response Cache.</li>
+            <li><b>AuthService (5001):</b> Автентифікація, випуск JWT Access/Refresh токенів, перевірка ролей. Власна БД <code>miniproject_auth</code>.</li>
+            <li><b>CatalogService (5002):</b> Каталог ігор, серверна пагінація <code>IQueryable</code>, фільтри. БД <code>miniproject_catalog</code>.</li>
+            <li><b>OrderingService (5003):</b> Замовлення, генерація ключів, ідемпотентність. БД <code>miniproject_ordering</code>.</li>
+            <li><b>WPF Desktop Client:</b> Спілкується <u>виключно</u> з портом 5000 і не знає внутрішньої топології.</li>
+        </ul>
+    </div>
+
+    <!-- Слайд 4 -->
+    <div class="slide">
+        <span class="badge">Слайд 4 / 8</span>
+        <h1>Стратегія міграції — Патерн Strangler Fig</h1>
+        <h2>Поетапне заміщення функціоналу моноліту без простоїв</h2>
+        <ul>
+            <li><b>ЛР0:</b> Встановлення Ocelot API Gateway як зворотного проксі перед монолітом.</li>
+            <li><b>ЛР1 (Auth + Catalog):</b> Винесення авторизації та каталогу в окремі сервіси. Автономна перевірка JWT без запитів до бази.</li>
+            <li><b>ЛР2 (Ordering):</b> Відокремлення замовлень, розрив спільних FK у базі, міграція замовлень, <code>Idempotency-Key</code>.</li>
+            <li><b>ЛР3 (Розширення Gateway):</b> Композитний ендпоінт для деталей гри (паралельний запит), кеш каталогу, Rate Limiting.</li>
+            <li><b>ЛР4 (Клієнтський шар):</b> Впровадження <code>AuthHandler</code> у WPF UI, обробка 429 Retry-After, оновлення 5 екранів.</li>
+        </ul>
+    </div>
+
+    <!-- Слайд 5 -->
+    <div class="slide">
+        <span class="badge">Слайд 5 / 8</span>
+        <h1>Найважче архітектурне рішення</h1>
+        <h2>Розподілена узгодженість без Foreign Keys та транзакцій</h2>
+        <div class="grid">
+            <div class="box">
+                <h3>🧩 Виклик</h3>
+                <p>У моноліті покупка — це одна SQL-транзакція. У мікросервісах дві фізичні БД: <code>catalog</code> та <code>ordering</code>. Потрібно гарантувати, що кошти не спишуться двічі при розриві зв'язку.</p>
+            </div>
+            <div class="box">
+                <h3>💡 Наше рішення</h3>
+                <ul>
+                    <li><b>Ідемпотентність:</b> Клієнт генерує заголовок <code>Idempotency-Key</code> (GUID). Повторний клік чи повтор запиту повертає існуючий чек;</li>
+                    <li><b>Знімок ціни (Snapshot):</b> Збереження <code>UnitPrice</code> на момент покупки, що захищає чеки від зміни цін у каталозі;</li>
+                    <li><b>Композитний API:</b> Шлюз паралельно агрегує Catalog + Ordering і підтримує часткову деградацію.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Слайд 6 -->
+    <div class="slide">
+        <span class="badge">Слайд 6 / 8</span>
+        <h1>Що реально працює, а що є компромісом</h1>
+        <h2>Об'єктивна оцінка реалізованого рішення</h2>
+        <div class="grid">
+            <div class="box">
+                <h3><span class="green">✔ Працює на 100%</span></h3>
+                <ul>
+                    <li>Наскрізний ланцюжок від логіну до оформлення;</li>
+                    <li>Кешування каталогу (In-Memory з метриками);</li>
+                    <li>Rate Limiter на логіні (5 req/min, 429);</li>
+                    <li>Усі 20 автоматичних тестів зелені.</li>
+                </ul>
+            </div>
+            <div class="box">
+                <h3><span class="accent">⚙ Технічні компроміси</span></h3>
+                <ul>
+                    <li><b>Синхронний HTTP замість брокера:</b> Для Enterprise краще використати RabbitMQ/Kafka для event-driven зв'язку;</li>
+                    <li><b>In-Memory замість Redis:</b> При масштабуванні шлюзу потрібен спільний розподілений кеш;</li>
+                    <li><b>Відсутність Saga Orchestrator:</b> Компенсаційні транзакції виконуються прямими викликами.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Слайд 7 -->
+    <div class="slide">
+        <span class="badge">Слайд 7 / 8</span>
+        <h1>Що змінилося в логіці бекенду</h1>
+        <h2>Порівняння архітектурних підходів</h2>
+        <div class="box" style="margin-bottom: 12px;">
+            <h3>1. Автономна валідація JWT (Zero Trust до клієнта)</h3>
+            <p>Сервіси Catalog та Ordering перевіряють підпис токена локально за відкритим/секретним ключем з бібліотеки <code>Shared</code>. Жодних мережевих запитів до AuthService!</p>
+        </div>
+        <div class="box" style="margin-bottom: 12px;">
+            <h3>2. Розрив Foreign Keys та Snapshotting</h3>
+            <p>У базі замовлень немає зовнішніх ключів на ігри. Зберігається числовий <code>GameId</code> та історична ціна покупки.</p>
+        </div>
+        <div class="box">
+            <h3>3. Ідемпотентність замість блокувань у БД</h3>
+            <p>Захист від подвійних платежів реалізовано через унікальний клієнтський ключ <code>Idempotency-Key</code>.</p>
+        </div>
+    </div>
+
+    <!-- Слайд 8 -->
+    <div class="slide">
+        <span class="badge">Слайд 8 / 8</span>
+        <h1>Висновки</h1>
+        <h2>Підсумки виконання циклу лабораторних робіт</h2>
+        <ul>
+            <li><span class="green">✔</span> Моноліт NovaGames успішно декомпоновано за патерном Strangler Fig без зупинки роботи системи.</li>
+            <li><span class="green">✔</span> Впроваджено патерн Database-per-Service (3 ізольовані бази даних MySQL).</li>
+            <li><span class="green">✔</span> API Gateway взяв на себе наскрізну функціональність: Rate Limiting, Кешування, Маршрутизацію та Композитний API.</li>
+            <li><span class="green">✔</span> WPF-клієнт повністю переведений на єдину точку входу та стабільно обробляє всі 4 стани UI.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="nav-bar">
+    <button class="btn" id="prevBtn" onclick="prevSlide()">← Назад</button>
+    <div class="counter" id="slideCounter">Слайд 1 з 8</div>
+    <button class="btn" id="nextBtn" onclick="nextSlide()">Далі →</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const counter = document.getElementById('slideCounter');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function updateSlide() {
+        slides.forEach((s, i) => s.classList.toggle('active', i === currentSlide));
+        counter.textContent = `Слайд ${currentSlide + 1} з ${slides.length}`;
+        prevBtn.disabled = currentSlide === 0;
+        nextBtn.disabled = currentSlide === slides.length - 1;
+    }
+
+    function nextSlide() {
+        if (currentSlide < slides.length - 1) {
+            currentSlide++;
+            updateSlide();
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlide > 0) {
+            currentSlide--;
+            updateSlide();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'Space') nextSlide();
+        if (e.key === 'ArrowLeft') prevSlide();
+    });
+
+    updateSlide();
+</script>
+</body>
+</html>

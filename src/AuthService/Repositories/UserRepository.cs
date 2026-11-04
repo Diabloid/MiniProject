@@ -32,11 +32,13 @@ public class UserRepository : BaseRepository<User>, IUserRepository
 
     public async Task<PagedResult<User>> GetPagedUsersAsync(int page, int pageSize)
     {
-        var totalCount = await _dbSet.CountAsync();
-
-        var items = await _dbSet
+        var query = _dbSet
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
+            .AsNoTracking();
+
+        var totalCount = await query.CountAsync();
+        var items = await query
             .OrderBy(u => u.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -47,6 +49,31 @@ public class UserRepository : BaseRepository<User>, IUserRepository
 
     public async Task<Role?> GetRoleByNameAsync(string roleName)
     {
-        return await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+        return await _context.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == roleName.ToLower());
+    }
+
+    public async Task<List<Role>> GetRolesByNamesAsync(IEnumerable<string> roleNames)
+    {
+        var lowerNames = roleNames.Select(r => r.ToLower()).ToList();
+        return await _context.Roles
+            .Where(r => lowerNames.Contains(r.Name.ToLower()))
+            .ToListAsync();
+    }
+
+    public async Task UpdateRolesAsync(User user, IEnumerable<Role> newRoles)
+    {
+        var existingUserRoles = _context.UserRoles.Where(ur => ur.UserId == user.Id);
+        _context.UserRoles.RemoveRange(existingUserRoles);
+
+        foreach (var role in newRoles)
+        {
+            _context.UserRoles.Add(new UserRole
+            {
+                UserId = user.Id,
+                RoleId = role.Id
+            });
+        }
+
+        await _context.SaveChangesAsync();
     }
 }
